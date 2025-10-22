@@ -1,0 +1,42 @@
+# Handle line endings automatically for files detected as text
+# and leave all files detected as binary untouched.
+* text=auto
+
+# Force Unix LF to make scripts executable under unix systems
+*.sh text eol=lf
+
+# The above will handle all files NOT listed below.
+# These files are text and should be normalized (Convert crlf => lf)
+*.css           text
+*.html          text
+*.js            text
+*.jsx           text
+*.ts            text
+*.tsx           text
+*.json          text
+*.md            text
+*.yml           text
+*.yaml          text
+
+# These files are binary and should be left untouched
+# (binary is a macro for -text -diff)
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.mov           binary
+*.mp4           binary
+*.mp3           binary
+*.flv           binary
+*.fla           binary
+*.swf           binary
+*.gz            binary
+*.zip           binary
+*.7z            binary
+*.ttf           binary
+*.eot           binary
+*.woff          binary
+*.woff2         binary
+*.pyc           binary
+*.pdf           binary

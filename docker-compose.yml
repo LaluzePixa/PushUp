@@ -1,0 +1,44 @@
+services:
+  api:
+    build: ./server
+    container_name: pushsaas_api
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./server/.env
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    container_name: pushsaas_db
+    environment:
+      POSTGRES_USER: pushsaas
+      POSTGRES_PASSWORD: pushsaas
+      POSTGRES_DB: pushsaas
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  frontend:
+    build: ./frontend
+    container_name: pushsaas_frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+  # Legacy client for backward compatibility
+  client:
+    image: nginx:alpine
+    container_name: pushsaas_client_legacy
+    ports:
+      - "8081:80"
+    volumes:
+      - ./client:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

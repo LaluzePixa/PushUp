@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>pushsaas · Panel de Administración</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+    .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .header { background: #2563eb; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .user-info { font-size: 14px; opacity: 0.9; margin-top: 5px; }
+    .content { padding: 20px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: 500; }
+    input, select, textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+    button { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { background: #9ca3af; cursor: not-allowed; }
+    .logout-btn { background: #dc2626; float: right; }
+    .logout-btn:hover { background: #b91c1c; }
+    .tabs { display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 20px; }
+    .tab { padding: 12px 20px; cursor: pointer; border-bottom: 2px solid transparent; }
+    .tab.active { border-bottom-color: #2563eb; color: #2563eb; font-weight: 500; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .output { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 15px; margin-top: 15px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+    .login-form { max-width: 400px; margin: 100px auto; }
+    .error { color: #dc2626; background: #fef2f2; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+    .success { color: #059669; background: #ecfdf5; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+    .users-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .users-table th, .users-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    .users-table th { background: #f9fafb; font-weight: 600; }
+    .role-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+    .role-user { background: #e0f2fe; color: #0277bd; }
+    .role-admin { background: #fff3e0; color: #f57c00; }
+    .role-superadmin { background: #fce4ec; color: #c2185b; }
+    .status-active { color: #059669; }
+    .status-inactive { color: #dc2626; }
+  </style>
+</head>
+<body>
+  <!-- Login Form -->
+  <div id="loginSection" class="container login-form">
+    <div class="header">
+      <h1>🚀 pushsaas</h1>
+      <div>Panel de Administración</div>
+    </div>
+    <div class="content">
+      <div id="loginError" class="error" style="display:none;"></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" name="email" required value="admin@pushsaas.local">
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" name="password" required value="admin123">
+        </div>
+        <button type="submit">Iniciar Sesión</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="adminSection" class="container" style="display:none;">
+    <div class="header">
+      <h1>🚀 pushsaas · Panel de Administración</h1>
+      <div class="user-info">
+        Conectado como: <span id="userEmail"></span> (<span id="userRole"></span>)
+        <button class="logout-btn" onclick="logout()">Cerrar Sesión</button>
+      </div>
+    </div>
+    
+    <div class="content">
+      <div class="tabs">
+        <div class="tab active" onclick="showTab('notifications')">📡 Notificaciones</div>
+        <div class="tab" onclick="showTab('users')">👥 Usuarios</div>
+        <div class="tab" onclick="showTab('stats')">📊 Estadísticas</div>
+      </div>
+
+      <!-- Notifications Tab -->
+      <div id="notificationsTab" class="tab-content active">
+        <form id="notificationForm">
+          <div class="form-group">
+            <label>Título</label>
+            <input name="title" value="Hola 👋" required>
+          </div>
+          <div class="form-group">
+            <label>Mensaje</label>
+            <textarea name="body" rows="3" required>Mensaje de prueba desde el panel de administración</textarea>
+          </div>
+          <div class="form-group">
+            <label>URL de destino</label>
+            <input name="url" value="/" placeholder="https://ejemplo.com">
+          </div>
+          <div class="form-group">
+            <label>Filtros (opcional)</label>
+            <input name="siteId" placeholder="Site ID (para multi-tenant)">
+            <input name="userId" type="number" placeholder="ID de usuario específico">
+          </div>
+          <button type="submit">📤 Enviar Notificación</button>
+        </form>
+        <div id="notificationOutput" class="output" style="display:none;"></div>
+      </div>
+
+      <!-- Users Tab -->
+      <div id="usersTab" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3>Gestión de Usuarios</h3>
+          <button onclick="showCreateUserForm()">➕ Crear Usuario</button>
+        </div>
+        
+        <div id="createUserForm" style="display:none; background: #f8f9fa; padding: 20px; border-radius: 4px; margin-bottom: 20px;">
+          <h4>Crear Nuevo Usuario</h4>
+          <form id="userForm">
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label>Contraseña</label>
+              <input type="password" name="password" required>
+            </div>
+            <div class="form-group">
+              <label>Rol</label>
+              <select name="role" required>
+                <option value="user">Usuario</option>
+                <option value="admin">Administrador</option>
+                <option value="superadmin">Super Administrador</option>
+              </select>
+            </div>
+            <button type="submit">Crear Usuario</button>
+            <button type="button" onclick="hideCreateUserForm()">Cancelar</button>
+          </form>
+        </div>
+
+        <div id="usersError" class="error" style="display:none;"></div>
+        <div id="usersSuccess" class="success" style="display:none;"></div>
+        
+        <table class="users-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th>Creado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="5">Cargando usuarios...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Stats Tab -->
+      <div id="statsTab" class="tab-content">
+        <h3>📊 Estadísticas del Sistema</h3>
+        <div id="statsContent">
+          <p>Cargando estadísticas...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let authToken = localStorage.getItem('authToken');
+
+    // Check if already logged in
+    if (authToken) {
+      checkAuth();
+    }
+
+    async function checkAuth() {
+      try {
+        const response = await fetch('/auth/me', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          currentUser = data.user;
+          showAdminPanel();
+        } else {
+          localStorage.removeItem('authToken');
+          authToken = null;
+        }
+      } catch (error) {
+        localStorage.removeItem('authToken');
+        authToken = null;
+      }
+    }
+
+    // Login form handler
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const loginData = Object.fromEntries(formData.entries());
+      
+      try {
+        const response = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(loginData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          authToken = data.token;
+          localStorage.setItem('authToken', authToken);
+          currentUser = data.user;
+          showAdminPanel();
+        } else {
+          showError('loginError', data.error || 'Error de inicio de sesión');
+        }
+      } catch (error) {
+        showError('loginError', 'Error de conexión');
+      }
+    });
+
+    function showAdminPanel() {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('adminSection').style.display = 'block';
+      document.getElementById('userEmail').textContent = currentUser.email;
+      document.getElementById('userRole').textContent = currentUser.role;
+      
+      // Load initial data
+      loadUsers();
+      loadStats();
+    }
+
+    function logout() {
+      localStorage.removeItem('authToken');
+      authToken = null;
+      currentUser = null;
+      document.getElementById('loginSection').style.display = 'block';
+      document.getElementById('adminSection').style.display = 'none';
+    }
+
+    // Notification form handler
+    document.getElementById('notificationForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const notificationData = Object.fromEntries(formData.entries());
+      
+      // Remove empty fields
+      Object.keys(notificationData).forEach(key => {
+        if (!notificationData[key]) delete notificationData[key];
+      });
+      
+      try {
+        const response = await fetch('/send', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(notificationData)
+        });
+        
+        const result = await response.json();
+        document.getElementById('notificationOutput').style.display = 'block';
+        document.getElementById('notificationOutput').textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        document.getElementById('notificationOutput').style.display = 'block';
+        document.getElementById('notificationOutput').textContent = 'Error: ' + error.message;
+      }
+    });
+
+    // User creation form
+    document.getElementById('userForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const userData = Object.fromEntries(formData.entries());
+      
+      try {
+        const response = await fetch('/auth/register', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify(userData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          showSuccess('usersSuccess', 'Usuario creado exitosamente');
+          hideCreateUserForm();
+          e.target.reset();
+          loadUsers();
+        } else {
+          showError('usersError', result.error || 'Error al crear usuario');
+        }
+      } catch (error) {
+        showError('usersError', 'Error de conexión');
+      }
+    });
+
+    async function loadUsers() {
+      try {
+        const response = await fetch('/users', {
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          displayUsers(data.users);
+        } else {
+          showError('usersError', 'Error al cargar usuarios');
+        }
+      } catch (error) {
+        showError('usersError', 'Error de conexión');
+      }
+    }
+
+    function displayUsers(users) {
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = users.map(user => `
+        <tr>
+          <td>${user.email}</td>
+          <td><span class="role-badge role-${user.role}">${user.role}</span></td>
+          <td><span class="status-${user.isActive ? 'active' : 'inactive'}">${user.isActive ? 'Activo' : 'Inactivo'}</span></td>
+          <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+          <td>
+            ${user.id !== currentUser.id ? `<button onclick="toggleUserStatus(${user.id}, ${!user.isActive})">${user.isActive ? 'Desactivar' : 'Activar'}</button>` : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function toggleUserStatus(userId, isActive) {
+      try {
+        const response = await fetch(`/users/${userId}`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ isActive })
+        });
+        
+        if (response.ok) {
+          loadUsers();
+          showSuccess('usersSuccess', `Usuario ${isActive ? 'activado' : 'desactivado'} exitosamente`);
+        } else {
+          const result = await response.json();
+          showError('usersError', result.error || 'Error al actualizar usuario');
+        }
+      } catch (error) {
+        showError('usersError', 'Error de conexión');
+      }
+    }
+
+    async function loadStats() {
+      // This would load system statistics
+      document.getElementById('statsContent').innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+          <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; text-align: center;">
+            <h4 style="margin: 0 0 10px 0;">📧 Total Suscripciones</h4>
+            <div style="font-size: 24px; font-weight: bold;">-</div>
+          </div>
+          <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; text-align: center;">
+            <h4 style="margin: 0 0 10px 0;">👥 Total Usuarios</h4>
+            <div style="font-size: 24px; font-weight: bold;">-</div>
+          </div>
+          <div style="background: #fefce8; padding: 20px; border-radius: 8px; text-align: center;">
+            <h4 style="margin: 0 0 10px 0;">📤 Notificaciones Enviadas</h4>
+            <div style="font-size: 24px; font-weight: bold;">-</div>
+          </div>
+        </div>
+        <p style="margin-top: 20px; color: #6b7280;">Las estadísticas detalladas estarán disponibles en una próxima versión.</p>
+      `;
+    }
+
+    // Tab functionality
+    function showTab(tabName) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tabName + 'Tab').classList.add('active');
+    }
+
+    function showCreateUserForm() {
+      document.getElementById('createUserForm').style.display = 'block';
+    }
+
+    function hideCreateUserForm() {
+      document.getElementById('createUserForm').style.display = 'none';
+    }
+
+    function showError(elementId, message) {
+      const element = document.getElementById(elementId);
+      element.textContent = message;
+      element.style.display = 'block';
+      setTimeout(() => element.style.display = 'none', 5000);
+    }
+
+    function showSuccess(elementId, message) {
+      const element = document.getElementById(elementId);
+      element.textContent = message;
+      element.style.display = 'block';
+      setTimeout(() => element.style.display = 'none', 5000);
+    }
+  </script>
+</body>
+</html>

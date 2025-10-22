@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Sitio Web del Cliente con PushSaaS</title>
+
+    <!-- Configuración PushSaaS -->
+    <meta name="pushsaas-site-id" content="demo-site-123">
+    <meta name="pushsaas-server-url" content="http://localhost:3000">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #333;
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        .content {
+            background: white;
+            padding: 40px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .feature {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .feature h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+        }
+
+        .integration-info {
+            background: #e8f4fd;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>🚀 Mi Sitio Web Increíble</h1>
+            <p>Ejemplo de integración con PushSaaS</p>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>¡Bienvenido!</h1>
+            <p>Este es un sitio web de ejemplo que muestra cómo funciona PushSaaS</p>
+            <a href="#features" class="btn">Explorar Características</a>
+        </div>
+    </section>
+
+    <div class="container">
+        <div class="integration-info">
+            <h3>📱 Notificaciones Push Habilitadas</h3>
+            <p>Este sitio web tiene integrado PushSaaS. ¡Mira la campana en la esquina inferior derecha!</p>
+            <p><strong>Funcionalidades:</strong></p>
+            <ul>
+                <li>✅ Campana de suscripción personalizable</li>
+                <li>✅ Notificaciones push en tiempo real</li>
+                <li>✅ Configuración desde el dashboard</li>
+                <li>✅ Analytics detallados</li>
+            </ul>
+        </div>
+
+        <div class="content">
+            <h2>¿Cómo funciona la integración?</h2>
+            <p>Para integrar PushSaaS en tu sitio web, solo necesitas agregar dos líneas de código:</p>
+
+            <h3>1. Meta tags de configuración:</h3>
+            <div class="code-block">
+                &lt;meta name="pushsaas-site-id" content="tu-site-id"&gt;
+                &lt;meta name="pushsaas-server-url" content="https://tu-servidor-pushsaas.com"&gt;
+            </div>
+
+            <h3>2. Script del widget:</h3>
+            <div class="code-block">
+                &lt;script src="https://tu-servidor-pushsaas.com/pushsaas-widget.js"&gt;&lt;/script&gt;
+            </div>
+
+            <p><strong>¡Y listo!</strong> La campana aparecerá automáticamente en tu sitio.</p>
+        </div>
+
+        <section id="features" class="features">
+            <div class="feature">
+                <h3>🔔 Fácil Suscripción</h3>
+                <p>Los usuarios pueden suscribirse con un solo clic usando la campana flotante.</p>
+            </div>
+
+            <div class="feature">
+                <h3>⚙️ Personalizable</h3>
+                <p>Configura colores, posición, textos y comportamiento desde el dashboard.</p>
+            </div>
+
+            <div class="feature">
+                <h3>📊 Analytics</h3>
+                <p>Ve estadísticas detalladas de suscriptores, campañas enviadas y engagement.</p>
+            </div>
+
+            <div class="feature">
+                <h3>🚀 Tiempo Real</h3>
+                <p>Envía notificaciones instantáneas o programa campañas para más tarde.</p>
+            </div>
+        </section>
+
+        <div class="content">
+            <h2>Prueba la Funcionalidad</h2>
+            <p>En esta página de demo puedes:</p>
+            <ol>
+                <li><strong>Ver la campana:</strong> Mira la esquina inferior derecha</li>
+                <li><strong>Suscribirte:</strong> Haz clic en la campana y acepta las notificaciones</li>
+                <li><strong>Ver el modal:</strong> Observa cómo se adapta según tu estado de suscripción</li>
+                <li><strong>Configurar:</strong> Ve a <a href="/subs-bell" target="_blank">la página de
+                        configuración</a> para personalizar</li>
+            </ol>
+
+            <div
+                style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <strong>💡 Tip:</strong> Abre las herramientas de desarrollador (F12) para ver los logs del widget en la
+                consola.
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Mi Sitio Web. Powered by PushSaaS</p>
+        </div>
+    </footer>
+
+    <!-- Service Worker para PushSaaS -->
+    <script>
+        // Copiar el service worker al directorio raíz si no existe
+        if ('serviceWorker' in navigator) {
+            // En una implementación real, el service worker debería estar en el dominio del cliente
+            navigator.serviceWorker.register('/pushsaas-sw.js')
+                .then(registration => {
+                    console.log('Service Worker registrado para PushSaaS:', registration);
+                })
+                .catch(error => {
+                    console.log('Error registrando Service Worker:', error);
+                });
+        }
+    </script>
+
+    <!-- Widget PushSaaS - Se inicializa automáticamente con los meta tags -->
+    <script src="/pushsaas-widget.js"></script>
+</body>
+
+</html>

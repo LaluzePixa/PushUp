@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PushSaaS - Demo Opt-in Prompt</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f9fafb;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #1f2937;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 30px;
+    }
+
+    .info-box {
+      background-color: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+
+    .info-box h3 {
+      margin-top: 0;
+      color: #1e40af;
+    }
+
+    .config-display {
+      background-color: #f3f4f6;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 20px 0;
+      font-family: monospace;
+      font-size: 14px;
+      overflow-x: auto;
+    }
+
+    .status {
+      padding: 10px;
+      border-radius: 6px;
+      margin: 10px 0;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .status.pending {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+
+    .status.success {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+
+    .status.error {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    .btn {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+    }
+
+    .btn:hover {
+      background-color: #2563eb;
+    }
+
+    .btn.secondary {
+      background-color: #6b7280;
+    }
+
+    .btn.secondary:hover {
+      background-color: #4b5563;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🔔 PushSaaS Demo</h1>
+    <p class="subtitle">Vista previa del opt-in prompt configurado</p>
+
+    <div class="info-box">
+      <h3>¿Cómo funciona esta demo?</h3>
+      <p>Esta página muestra cómo funciona el opt-in prompt que configuraste en el panel de administración. El prompt
+        aparecerá automáticamente según la configuración establecida.</p>
+    </div>
+
+    <div id="status" class="status pending">
+      Cargando configuración del opt-in prompt...
+    </div>
+
+    <div id="config-display" class="config-display" style="display: none;">
+      <strong>Configuración actual:</strong>
+      <pre id="config-content"></pre>
+    </div>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <button class="btn" onclick="resetDemo()">🔄 Reiniciar Demo</button>
+      <button class="btn secondary" onclick="toggleConfig()">⚙️ Ver Configuración</button>
+      <a href="/admin.html" class="btn secondary" style="text-decoration: none; display: inline-block;">
+        📊 Panel Admin
+      </a>
+    </div>
+
+    <div class="info-box">
+      <h3>💡 Instrucciones:</h3>
+      <ul>
+        <li><strong>Lightbox 1/2:</strong> Aparecerá un modal en el centro de la pantalla</li>
+        <li><strong>Bell Icon:</strong> Verás un ícono de campana en la esquina inferior derecha</li>
+        <li><strong>Inmediato:</strong> El prompt aparece al cargar la página</li>
+        <li><strong>5 segundos:</strong> El prompt aparece después de 5 segundos</li>
+        <li><strong>Exit Intent:</strong> El prompt aparece cuando mueves el mouse hacia la barra de direcciones</li>
+      </ul>
+    </div>
+
+    <div style="margin-top: 40px; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
+      <h3>🚀 Integración en tu sitio web</h3>
+      <p>Para usar este opt-in prompt en tu sitio web, agrega este código antes del cierre de la etiqueta
+        <code>&lt;/body&gt;</code>:</p>
+      <div class="config-display">
+        <pre id="integration-code">Cargando código de integración...</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- PushSaaS Script -->
+  <script src="/pushsaas.js"></script>
+
+  <script>
+    let currentConfig = null;
+    let configVisible = false;
+
+    // Función para obtener configuración de la URL o usar default
+    function getConfig() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const configParam = urlParams.get('config');
+
+      if (configParam) {
+        try {
+          return JSON.parse(decodeURIComponent(configParam));
+        } catch (error) {
+          console.error('Error parsing config:', error);
+        }
+      }
+
+      // Configuración por defecto
+      return {
+        type: 'lightbox1',
+        whenToShow: 'Show Immediately',
+        animation: 'Drop-in',
+        backgroundColor: '#ffffff',
+        headline: 'Stay Updated!',
+        text: 'Would you like to receive notifications on latest updates?',
+        cancelButton: 'NOT YET',
+        cancelBgColor: '#ffffff',
+        cancelTextColor: '#000000',
+        approveButton: 'YES',
+        approveBgColor: '#2563eb',
+        approveTextColor: '#ffffff',
+        siteId: 1
+      };
+    }
+
+    // Función para actualizar el estado
+    function updateStatus(message, type = 'pending') {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+    }
+
+    // Función para mostrar/ocultar configuración
+    function toggleConfig() {
+      configVisible = !configVisible;
+      const configDisplay = document.getElementById('config-display');
+      const configContent = document.getElementById('config-content');
+
+      if (configVisible) {
+        configContent.textContent = JSON.stringify(currentConfig, null, 2);
+        configDisplay.style.display = 'block';
+      } else {
+        configDisplay.style.display = 'none';
+      }
+    }
+
+    // Función para reiniciar la demo
+    function resetDemo() {
+      // Eliminar cualquier prompt existente
+      const existingPrompts = document.querySelectorAll('[style*="z-index: 10000"]');
+      existingPrompts.forEach(prompt => prompt.remove());
+
+      // Reiniciar con la configuración actual
+      setTimeout(() => {
+        if (window.PushSaaS) {
+          window.PushSaaS.init(currentConfig);
+          updateStatus('Demo reiniciada - El prompt debería aparecer según la configuración', 'success');
+        }
+      }, 500);
+    }
+
+    // Función para generar código de integración
+    function generateIntegrationCode() {
+      const apiBase = window.location.origin;
+      return `<!-- PushSaaS Opt-in Prompt -->
+<script>
+(function() {
+  var config = ${JSON.stringify(currentConfig, null, 2)};
+  var script = document.createElement('script');
+  script.src = '${apiBase}/pushsaas.js';
+  script.onload = function() {
+    if (window.PushSaaS) {
+      window.PushSaaS.init(config);
+    }
+  };
+  document.head.appendChild(script);
+})();
+  </script>`;
+  }
+
+  // Inicialización
+  window.addEventListener('load', function() {
+  currentConfig = getConfig();
+
+  // Mostrar código de integración
+  document.getElementById('integration-code').textContent = generateIntegrationCode();
+
+  // Verificar si PushSaaS está disponible
+  if (window.PushSaaS) {
+  updateStatus(`Configuración cargada - Tipo: ${currentConfig.type} | Cuándo mostrar: ${currentConfig.whenToShow}`,
+  'success');
+
+  // Pequeño delay para que se vea el mensaje de estado
+  setTimeout(() => {
+  window.PushSaaS.init(currentConfig);
+  }, 1000);
+  } else {
+  updateStatus('Error: No se pudo cargar PushSaaS library', 'error');
+  }
+  });
+
+  // Eventos para debugging
+  document.addEventListener('click', function(e) {
+  if (e.target.id === 'pushsaas-approve') {
+  updateStatus('¡Usuario aprobó las notificaciones! 🎉', 'success');
+  } else if (e.target.id === 'pushsaas-cancel') {
+  updateStatus('Usuario canceló las notificaciones', 'pending');
+  }
+  });
+  </script>
+</body>
+
+</html>
