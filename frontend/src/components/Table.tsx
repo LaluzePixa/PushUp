@@ -16,27 +16,27 @@ export default function Tables() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchSubscriptions = async () => {
-            try {
-                setLoading(true);
-                setError(null);
+    const fetchSubscriptions = async () => {
+        try {
+            setLoading(true);
+            setError(null);
 
-                const response = await dashboardService.getSubscriptions(20, 1);
+            const response = await dashboardService.getSubscriptions(20, 1);
 
-                if (response.success && response.data) {
-                    setSubscriptions(response.data);
-                } else {
-                    setError('Error al cargar suscriptores');
-                }
-            } catch (err) {
-                console.error('Error fetching subscriptions:', err);
-                setError('Error de conexión');
-            } finally {
-                setLoading(false);
+            if (response.success && response.data) {
+                setSubscriptions(response.data);
+            } else {
+                setError('Error al cargar suscriptores');
             }
-        };
+        } catch (err) {
+            console.error('Error fetching subscriptions:', err);
+            setError('Error de conexión');
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchSubscriptions();
     }, []);
 
@@ -78,7 +78,7 @@ export default function Tables() {
                             <div className="text-red-500">
                                 <p className="mb-2">❌ {error}</p>
                                 <button
-                                    onClick={() => window.location.reload()}
+                                    onClick={fetchSubscriptions}
                                     className="text-sm text-primary hover:underline"
                                 >
                                     Reintentar

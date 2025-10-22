@@ -50,27 +50,27 @@ export default function Chart() {
   const [error, setError] = useState<string | null>(null)
 
   // Cargar datos analíticos
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        setLoading(true)
-        setError(null)
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true)
+      setError(null)
 
-        const response = await dashboardService.getAnalytics(parseInt(timeRange))
+      const response = await dashboardService.getAnalytics(parseInt(timeRange))
 
-        if (response.success && response.data) {
-          setChartData(response.data)
-        } else {
-          setError('Error al cargar datos analíticos')
-        }
-      } catch (err) {
-        console.error('Error fetching analytics:', err)
-        setError('Error de conexión')
-      } finally {
-        setLoading(false)
+      if (response.success && response.data) {
+        setChartData(response.data)
+      } else {
+        setError('Error al cargar datos analíticos')
       }
+    } catch (err) {
+      console.error('Error fetching analytics:', err)
+      setError('Error de conexión')
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchAnalytics()
   }, [timeRange])
 
@@ -118,7 +118,7 @@ export default function Chart() {
             <div className="text-center text-muted-foreground">
               <p className="text-destructive mb-2">⚠️ {error}</p>
               <button
-                onClick={() => window.location.reload()}
+                onClick={fetchAnalytics}
                 className="text-sm text-primary hover:underline"
               >
                 Reintentar
