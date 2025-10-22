@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useSiteContext } from "@/contexts/SiteContext"
+import { useAuth } from "@/contexts/AuthContext"
 import {
   Gauge,
   Users,
@@ -702,17 +703,14 @@ const useUser = () => {
 
 // Componente del dropdown de usuario
 function UserDropdown({ user }: { user: { name: string; email?: string } }) {
-  const router = useRouter()
+  const { logout } = useAuth()
 
   const handleLogout = () => {
     console.log('🚪 Cerrando sesión...')
-
-    document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-    localStorage.removeItem('auth-token')
-    localStorage.removeItem('user-email')
-
+    // Usar el método del AuthContext que maneja toda la limpieza
+    // Esto actualiza el estado de React, limpia tokens y redirige
+    logout()
     console.log('✅ Sesión cerrada correctamente')
-    router.push('/login')
   }
 
   return (

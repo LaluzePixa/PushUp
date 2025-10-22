@@ -137,8 +137,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         authService.logout();
         setUser(null);
 
-        // Usar router para navegación más suave
+        // Limpiar también el sitio seleccionado del localStorage
+        // para evitar que el siguiente usuario vea el sitio del usuario anterior
         if (typeof window !== 'undefined') {
+            localStorage.removeItem('selectedSiteId');
             // Evitar problemas de chunks con navegación manual
             window.location.href = '/login';
         }
