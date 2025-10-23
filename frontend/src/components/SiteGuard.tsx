@@ -44,12 +44,14 @@ export const SiteGuard: React.FC<SiteGuardProps> = ({ children }) => {
     }
 
     // Mostrar selector si no hay sitio seleccionado
+    // KEY: Forzar remount limpio para evitar errores de HMR con lucide-react
     if (shouldShowSelector) {
         console.log('🎯 Mostrando CleanSiteSelector');
-        return <CleanSiteSelector />;
+        return <CleanSiteSelector key={`site-selector-${sites.length}`} />;
     }
 
     // Mostrar contenido una vez seleccionado el sitio
+    // KEY: Usar site id para forzar remount completo cuando cambia el sitio (evita errores HMR)
     console.log('📱 Mostrando dashboard con sidebar');
-    return <>{children}</>;
+    return <div key={`dashboard-${selectedSite?.id || 'none'}`}>{children}</div>;
 };
