@@ -19,8 +19,10 @@ export const SiteLayoutWrapper: React.FC<SiteLayoutWrapperProps> = ({ children }
     if (selectedSite) {
         return (
             <SidebarLayout>
-                <main className="h-full overflow-auto p-4">
-                    {children}
+                <main className="flex-1 w-full overflow-auto">
+                    <div className="h-full p-4 md:p-6 lg:p-8">
+                        {children}
+                    </div>
                 </main>
             </SidebarLayout>
         );
