@@ -30,7 +30,7 @@ router.get('/', authenticateToken, async (req, res) => {
       isActive
     } = req.query;
 
-    let whereConditions = [`user_id = $1`];
+    let whereConditions = [`s.user_id = $1`];
     let queryParams = [req.user.id];
     let paramCounter = 2;
 
@@ -43,22 +43,22 @@ router.get('/', authenticateToken, async (req, res) => {
 
     // Filtro por estado activo
     if (isActive !== undefined) {
-      whereConditions.push(`is_active = $${paramCounter}`);
+      whereConditions.push(`s.is_active = $${paramCounter}`);
       queryParams.push(isActive === 'true');
       paramCounter++;
     }
 
     // Búsqueda por nombre o dominio
     if (search) {
-      whereConditions.push(`(name ILIKE $${paramCounter} OR domain ILIKE $${paramCounter})`);
+      whereConditions.push(`(s.name ILIKE $${paramCounter} OR s.domain ILIKE $${paramCounter})`);
       queryParams.push(`%${search}%`);
       paramCounter++;
     }
 
-    const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     // Contar total
-    const countQuery = `SELECT COUNT(*) FROM sites ${whereClause}`;
+    const countQuery = `SELECT COUNT(*) FROM sites s ${whereClause}`;
     const countResult = await pool.query(countQuery, queryParams);
     const total = parseInt(countResult.rows[0].count);
 

@@ -46,7 +46,7 @@ export function CardDemo() {
 
         // Obtener URL de redirect si existe
         const urlParams = new URLSearchParams(window.location.search)
-        const redirectUrl = urlParams.get('redirect') || '/dashboard'
+        const redirectUrl = urlParams.get('redirect') || '/select-site'
 
         console.log('🔄 Redirigiendo a:', redirectUrl)
 
