@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
 import {
@@ -50,7 +50,7 @@ export default function Chart() {
   const [error, setError] = useState<string | null>(null)
 
   // Cargar datos analíticos
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -68,13 +68,16 @@ export default function Chart() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [timeRange])
 
   useEffect(() => {
     fetchAnalytics()
-  }, [timeRange])
+  }, [fetchAnalytics])
 
-  const filteredData = chartData.slice(-parseInt(timeRange))
+  const filteredData = useMemo(
+    () => chartData.slice(-parseInt(timeRange)),
+    [chartData, timeRange]
+  )
 
   return (
     <Card>
