@@ -134,15 +134,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
      * Función de cierre de sesión
      */
     const logout = () => {
-        authService.logout();
+        console.log('🚪 Cerrando sesión...');
+
+        // Limpiar el estado del usuario
         setUser(null);
 
-        // Limpiar también el sitio seleccionado del localStorage
-        // para evitar que el siguiente usuario vea el sitio del usuario anterior
+        // Limpiar todos los datos almacenados
         if (typeof window !== 'undefined') {
+            // Limpiar autenticación
+            authService.logout();
+
+            // Limpiar sitio seleccionado
             localStorage.removeItem('selectedSiteId');
-            // Evitar problemas de chunks con navegación manual
-            window.location.href = '/login';
+
+            // Limpiar cualquier otro dato que pueda quedar
+            localStorage.removeItem('user-email');
+
+            console.log('✅ Sesión cerrada, redirigiendo al login');
+
+            // Usar replace() en lugar de href para evitar problemas con chunks
+            // replace() hace un hard reload que limpia todos los chunks de Next.js
+            window.location.replace('/login');
         }
     };
 
@@ -192,8 +204,10 @@ export const useRequireAuth = () => {
 
     useEffect(() => {
         if (!loading && !isAuthenticated) {
-            // Redirigir al login
-            window.location.href = '/login';
+            // Redirigir al login con hard reload
+            if (typeof window !== 'undefined') {
+                window.location.replace('/login');
+            }
         }
     }, [isAuthenticated, loading]);
 
@@ -208,8 +222,10 @@ export const useRequireAdmin = () => {
 
     useEffect(() => {
         if (!loading && !isAdmin) {
-            // Redirigir al dashboard o mostrar error de permisos
-            window.location.href = '/dashboard';
+            // Redirigir al dashboard o mostrar error de permisos con hard reload
+            if (typeof window !== 'undefined') {
+                window.location.replace('/dashboard');
+            }
         }
     }, [isAdmin, loading]);
 
