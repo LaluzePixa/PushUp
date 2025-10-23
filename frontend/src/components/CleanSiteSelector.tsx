@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+'use client'
+
+import React, { useState, memo } from 'react';
 import { Globe, Plus } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -21,7 +23,8 @@ interface SiteItemProps {
     isSelected: boolean;
 }
 
-const SiteItem: React.FC<SiteItemProps> = ({ site, onSelect, isSelected }) => {
+// Memoize SiteItem to prevent unnecessary re-renders
+const SiteItem = memo<SiteItemProps>(({ site, onSelect, isSelected }) => {
     return (
         <div
             className={`cursor-pointer p-3 rounded-md border transition-all hover:bg-gray-50 dark:hover:bg-gray-800 ${isSelected
@@ -53,9 +56,12 @@ const SiteItem: React.FC<SiteItemProps> = ({ site, onSelect, isSelected }) => {
             </div>
         </div>
     );
-};
+});
 
-export const CleanSiteSelector: React.FC = () => {
+// Add display name for better debugging
+SiteItem.displayName = 'SiteItem';
+
+const CleanSiteSelectorComponent: React.FC = () => {
     const { sites, selectedSite, setSelectedSite, createSite, loading } = useSiteContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
@@ -203,3 +209,7 @@ export const CleanSiteSelector: React.FC = () => {
         </div>
     );
 };
+
+// Memoize the main component to prevent re-renders when parent updates
+CleanSiteSelectorComponent.displayName = 'CleanSiteSelector';
+export const CleanSiteSelector = memo(CleanSiteSelectorComponent);
