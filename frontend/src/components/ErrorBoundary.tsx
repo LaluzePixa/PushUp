@@ -94,7 +94,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                 Intentar de nuevo
               </Button>
               <Button
-                onClick={() => window.location.href = '/dashboard'}
+                onClick={() => window.location.replace('/dashboard')}
                 variant="default"
               >
                 Volver al inicio
