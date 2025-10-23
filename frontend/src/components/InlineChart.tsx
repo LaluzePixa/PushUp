@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts"
 
 import {
@@ -41,29 +41,29 @@ export function InlineChart() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        setLoading(true)
-        setError(null)
+  const fetchAnalytics = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
 
-        const response = await dashboardService.getAnalytics(30)
+      const response = await dashboardService.getAnalytics(30)
 
-        if (response.success && response.data) {
-          setChartData(response.data)
-        } else {
-          setError('Error al cargar datos')
-        }
-      } catch (err) {
-        console.error('Error fetching analytics:', err)
-        setError('Error de conexión')
-      } finally {
-        setLoading(false)
+      if (response.success && response.data) {
+        setChartData(response.data)
+      } else {
+        setError('Error al cargar datos')
       }
+    } catch (err) {
+      console.error('Error fetching analytics:', err)
+      setError('Error de conexión')
+    } finally {
+      setLoading(false)
     }
-
-    fetchAnalytics()
   }, [])
+
+  useEffect(() => {
+    fetchAnalytics()
+  }, [fetchAnalytics])
 
   const total = React.useMemo(
     () => ({

@@ -2,7 +2,17 @@ import { createVerifier, createSigner } from 'fast-jwt';
 import bcrypt from 'bcrypt';
 
 // Configuración JWT
-const JWT_SECRET = process.env.JWT_SECRET || 'pushsaas-secret-key-change-in-production';
+// SEGURIDAD: No permitir fallback a secret débil
+// La aplicación DEBE fallar si no hay JWT_SECRET configurado
+if (!process.env.JWT_SECRET) {
+  throw new Error(
+    '❌ CRITICAL SECURITY ERROR: JWT_SECRET environment variable is required.\n' +
+    'Please set JWT_SECRET in your .env file with a strong random secret.\n' +
+    'You can generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"'
+  );
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 // Crear funciones de JWT

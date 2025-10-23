@@ -63,14 +63,19 @@ router.get('/', authenticateToken, async (req, res) => {
     const total = parseInt(countResult.rows[0].count);
 
     // Query principal con paginación
+    // OPTIMIZATION: Use LEFT JOIN with GROUP BY instead of subqueries
+    // This prevents N+1 query problem (was 2*N+1 queries, now just 1)
     const offset = (page - 1) * limit;
     const sitesQuery = `
-      SELECT s.*, 
-             (SELECT COUNT(*) FROM subscriptions WHERE site_id = s.id) as subscribers_count,
-             (SELECT COUNT(*) FROM campaigns WHERE site_id = s.id) as campaigns_count
+      SELECT s.*,
+             COALESCE(COUNT(DISTINCT sub.id), 0) as subscribers_count,
+             COALESCE(COUNT(DISTINCT c.id), 0) as campaigns_count
       FROM sites s
+      LEFT JOIN subscriptions sub ON s.id = sub.site_id
+      LEFT JOIN campaigns c ON s.id = c.site_id
       ${whereClause}
-      ORDER BY s.created_at DESC 
+      GROUP BY s.id
+      ORDER BY s.created_at DESC
       LIMIT $${paramCounter} OFFSET $${paramCounter + 1}
     `;
 
@@ -216,12 +221,16 @@ router.get('/:id', authenticateToken, authorizeRoles('admin', 'superadmin'), asy
       });
     }
 
+    // OPTIMIZATION: Use LEFT JOIN instead of subqueries for consistency
     const siteResult = await pool.query(
-      `SELECT s.*, 
-              (SELECT COUNT(*) FROM subscriptions WHERE site_id = s.id) as subscribers_count,
-              (SELECT COUNT(*) FROM campaigns WHERE site_id = s.id) as campaigns_count
-       FROM sites s 
-       WHERE s.id = $1 AND s.user_id = $2`,
+      `SELECT s.*,
+              COALESCE(COUNT(DISTINCT sub.id), 0) as subscribers_count,
+              COALESCE(COUNT(DISTINCT c.id), 0) as campaigns_count
+       FROM sites s
+       LEFT JOIN subscriptions sub ON s.id = sub.site_id
+       LEFT JOIN campaigns c ON s.id = c.site_id
+       WHERE s.id = $1 AND s.user_id = $2
+       GROUP BY s.id`,
       [siteId, req.user.id]
     );
 

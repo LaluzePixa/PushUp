@@ -1,10 +1,14 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// In-memory storage for subscription bell configuration
-// En producción, esto debería ir en la base de datos
+// ⚠️ CRITICAL TODO: Move to database
+// In-memory storage is NOT production-ready:
+// - Data lost on server restart
+// - Not multi-tenant safe (single global state)
+// - No audit trail or history
+// ACTION: Create 'subscription_bell_configs' table with site_id FK
 let subscriptionBellConfig = {
     style: 'Rounded',
     position: 'Bottom Left',
@@ -54,9 +58,10 @@ router.get('/config', (req, res) => {
 /**
  * @route POST /api/subscription-bell/config
  * @desc Update subscription bell configuration
- * @access Public (para que la página HTML pueda guardar sin autenticación)
+ * @access Private (Admin/SuperAdmin only)
+ * SECURITY FIX: Added authentication - only admins can modify configuration
  */
-router.post('/config', (req, res) => {
+router.post('/config', authenticateToken, authorizeRoles('admin', 'superadmin'), (req, res) => {
     try {
         const {
             style,
@@ -132,9 +137,10 @@ router.post('/config', (req, res) => {
 /**
  * @route POST /api/subscription-bell/toggle
  * @desc Toggle subscription bell visibility
- * @access Public (para que la página HTML pueda cambiar sin autenticación)
+ * @access Private (Admin/SuperAdmin only)
+ * SECURITY FIX: Added authentication - only admins can toggle visibility
  */
-router.post('/toggle', (req, res) => {
+router.post('/toggle', authenticateToken, authorizeRoles('admin', 'superadmin'), (req, res) => {
     try {
         const { isActive } = req.body;
 

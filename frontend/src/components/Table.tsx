@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
     Table,
     TableBody,
@@ -16,39 +16,29 @@ export default function Tables() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchSubscriptions = async () => {
-            try {
-                setLoading(true);
-                setError(null);
+    const fetchSubscriptions = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
 
-                const response = await dashboardService.getSubscriptions(20, 1);
+            const response = await dashboardService.getSubscriptions(20, 1);
 
-                if (response.success && response.data) {
-                    setSubscriptions(response.data);
-                } else {
-                    setError('Error al cargar suscriptores');
-                }
-            } catch (err) {
-                console.error('Error fetching subscriptions:', err);
-                setError('Error de conexión');
-            } finally {
-                setLoading(false);
+            if (response.success && response.data) {
+                setSubscriptions(response.data);
+            } else {
+                setError('Error al cargar suscriptores');
             }
-        };
-
-        fetchSubscriptions();
+        } catch (err) {
+            console.error('Error fetching subscriptions:', err);
+            setError('Error de conexión');
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    // Función para formatear fecha
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            year: '2-digit'
-        });
-    };
+    useEffect(() => {
+        fetchSubscriptions();
+    }, [fetchSubscriptions]);
 
     return (
         <Table className="dark:bg-[#222]">
@@ -78,7 +68,7 @@ export default function Tables() {
                             <div className="text-red-500">
                                 <p className="mb-2">❌ {error}</p>
                                 <button
-                                    onClick={() => window.location.reload()}
+                                    onClick={fetchSubscriptions}
                                     className="text-sm text-primary hover:underline"
                                 >
                                     Reintentar

@@ -9,10 +9,48 @@ const isValidEmail = (email) => {
   return emailRegex.test(email);
 };
 
-// Validación de contraseña
+// Validación de contraseña - SECURITY: Strengthened requirements
 const isValidPassword = (password) => {
-  // Mínimo 6 caracteres
-  return password && password.length >= 6;
+  if (!password || password.length < 12) {
+    return {
+      valid: false,
+      message: 'La contraseña debe tener al menos 12 caracteres'
+    };
+  }
+
+  // At least one uppercase letter
+  if (!/[A-Z]/.test(password)) {
+    return {
+      valid: false,
+      message: 'La contraseña debe contener al menos una letra mayúscula'
+    };
+  }
+
+  // At least one lowercase letter
+  if (!/[a-z]/.test(password)) {
+    return {
+      valid: false,
+      message: 'La contraseña debe contener al menos una letra minúscula'
+    };
+  }
+
+  // At least one number
+  if (!/[0-9]/.test(password)) {
+    return {
+      valid: false,
+      message: 'La contraseña debe contener al menos un número'
+    };
+  }
+
+  // At least one special character
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    return {
+      valid: false,
+      message: 'La contraseña debe contener al menos un carácter especial (!@#$%^&*(),.?":{}|<>)'
+    };
+  }
+
+  return { valid: true };
 };
 
 // POST /auth/register - Registro de usuarios
@@ -35,10 +73,18 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    if (!isValidPassword(password)) {
+    const passwordValidation = isValidPassword(password);
+    if (!passwordValidation.valid) {
       return res.status(400).json({
-        error: 'La contraseña debe tener al menos 6 caracteres',
-        code: 'INVALID_PASSWORD'
+        error: passwordValidation.message,
+        code: 'INVALID_PASSWORD',
+        requirements: {
+          minLength: 12,
+          uppercase: true,
+          lowercase: true,
+          number: true,
+          specialChar: true
+        }
       });
     }
 

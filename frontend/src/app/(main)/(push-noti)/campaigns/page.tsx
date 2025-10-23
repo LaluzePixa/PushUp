@@ -1,6 +1,6 @@
 'use client'
 import InfoCard from "@/components/InfoCard";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, ChevronUp, ChevronDown, Info } from "lucide-react";
 import { campaignsService, Campaign } from "@/services/api";
 import CreateCampaignModal from "@/components/CreateCampaignModal";
@@ -24,34 +24,34 @@ export default function Campaigns() {
   });
 
   // Cargar campañas desde el backend
-  useEffect(() => {
-    const loadCampaigns = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+  const loadCampaigns = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        const response = await campaignsService.getCampaigns({
-          page: pagination.current,
-          limit: pagination.limit,
-          search: searchTerm || undefined
-        });
+      const response = await campaignsService.getCampaigns({
+        page: pagination.current,
+        limit: pagination.limit,
+        search: searchTerm || undefined
+      });
 
-        if (response.success && response.data) {
-          setCampaigns(response.data.campaigns);
-          setPagination(response.data.pagination);
-        } else {
-          setError('No se pudieron cargar las campañas');
-        }
-      } catch (err) {
-        console.error('Error loading campaigns:', err);
-        setError('Error al cargar las campañas');
-      } finally {
-        setIsLoading(false);
+      if (response.success && response.data) {
+        setCampaigns(response.data.campaigns);
+        setPagination(response.data.pagination);
+      } else {
+        setError('No se pudieron cargar las campañas');
       }
-    };
+    } catch (err) {
+      console.error('Error loading campaigns:', err);
+      setError('Error al cargar las campañas');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchTerm, pagination.current, pagination.limit]);
 
+  useEffect(() => {
     loadCampaigns();
-  }, [searchTerm, pagination.current]);
+  }, [loadCampaigns]);
 
   // Cerrar dropdowns al hacer clic fuera
   useEffect(() => {
@@ -129,30 +129,33 @@ export default function Campaigns() {
   };
 
   // Ordenar campañas localmente después de obtenerlas del backend
-  const sortedCampaigns = [...campaigns].sort((a, b) => {
-    let aValue, bValue;
+  // Memoize to prevent expensive sorting on every render
+  const sortedCampaigns = useMemo(() => {
+    return [...campaigns].sort((a, b) => {
+      let aValue, bValue;
 
-    switch (sortField) {
-      case 'name':
-        aValue = a.name.toLowerCase();
-        bValue = b.name.toLowerCase();
-        break;
-      case 'dateCreated':
-        aValue = new Date(a.dateCreated).getTime();
-        bValue = new Date(b.dateCreated).getTime();
-        break;
-      case 'status':
-        aValue = a.status;
-        bValue = b.status;
-        break;
-      default:
-        return 0;
-    }
+      switch (sortField) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'dateCreated':
+          aValue = new Date(a.dateCreated).getTime();
+          bValue = new Date(b.dateCreated).getTime();
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        default:
+          return 0;
+      }
 
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [campaigns, sortField, sortDirection]);
 
   const getStatusBadge = (status: Campaign['status']) => {
     const baseClasses = "px-2 py-1 rounded text-xs font-medium";
@@ -312,7 +315,7 @@ export default function Campaigns() {
                     <div className="text-destructive">
                       <p className="mb-2">⚠️ {error}</p>
                       <button
-                        onClick={() => window.location.reload()}
+                        onClick={loadCampaigns}
                         className="text-sm text-primary hover:underline"
                       >
                         Reintentar
