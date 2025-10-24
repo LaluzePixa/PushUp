@@ -30,6 +30,7 @@ export const SiteProvider = ({ children }: SiteProviderProps) => {
   const [selectedSite, setSelectedSiteState] = useState<Site | null>(null);
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   /**
    * Wrapper para setSelectedSite que persiste en localStorage
@@ -79,6 +80,7 @@ export const SiteProvider = ({ children }: SiteProviderProps) => {
       console.error('Error loading sites:', error);
     } finally {
       setLoading(false);
+      setIsInitialized(true);
     }
   };
 
@@ -107,6 +109,23 @@ export const SiteProvider = ({ children }: SiteProviderProps) => {
   useEffect(() => {
     loadSites();
   }, []);
+
+  // Efecto para sincronizar el sitio seleccionado cuando los sites cambian
+  useEffect(() => {
+    if (isInitialized && sites.length > 0 && !selectedSite) {
+      // Si no hay sitio seleccionado pero hay sites disponibles, intentar restaurar
+      if (typeof window !== 'undefined') {
+        const savedSiteId = localStorage.getItem('selectedSiteId');
+        if (savedSiteId) {
+          const savedSite = sites.find(s => s.id.toString() === savedSiteId);
+          if (savedSite) {
+            console.log('🔄 Re-sincronizando sitio seleccionado:', savedSite.name);
+            setSelectedSiteState(savedSite);
+          }
+        }
+      }
+    }
+  }, [sites, selectedSite, isInitialized]);
 
   const value: SiteContextType = {
     selectedSite,
