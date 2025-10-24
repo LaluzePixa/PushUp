@@ -1,3 +1,10 @@
+/*
+ * ⚠️ SECCIÓN TEMPORALMENTE DESHABILITADA ⚠️
+ * Esta sección de REST API Keys (Public API) está comentada temporalmente
+ * Fecha: 2025-10-24
+ * No borrar - se reactivará próximamente
+ */
+
 'use client'
 import InfoCard from "@/components/InfoCard";
 import React, { useState } from "react";
@@ -105,11 +112,32 @@ echo $response;
         <div className="space-y-8">
             {/* Header Section */}
             <div>
-            <InfoCard 
-                    title="REST API Keys" 
+                <InfoCard
+                    title="REST API Keys"
                     description=""
                 />
             </div>
+
+            {/* ⚠️ FUNCIONALIDAD TEMPORALMENTE DESHABILITADA */}
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-8">
+                <div className="text-center">
+                    <div className="text-6xl mb-4">🚧</div>
+                    <h2 className="text-2xl font-bold text-yellow-800 dark:text-yellow-200 mb-3">
+                        Funcionalidad en Mantenimiento
+                    </h2>
+                    <p className="text-yellow-700 dark:text-yellow-300 mb-4">
+                        La sección de REST API Keys (Public API) está temporalmente deshabilitada.
+                    </p>
+                    <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                        Esta función se reactivará próximamente. Por favor, utiliza las otras opciones disponibles.
+                    </p>
+                </div>
+            </div>
+
+            {/* CÓDIGO ORIGINAL COMENTADO - NO BORRAR */}
+            {false && (
+            <div className="hidden">
+            {/* Todo el contenido original está aquí pero no se renderiza */}
 
             {/* API Keys Section */}
             <div className="bg-white border border-border dark:bg-[#222] rounded-lg p-6">
@@ -210,6 +238,9 @@ echo $response;
                     </div>
                 </div>
             </div>
+            </div>
+            )}
+            {/* FIN CÓDIGO ORIGINAL COMENTADO */}
         </div>
     );
 }
