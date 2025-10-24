@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 /**
@@ -16,6 +17,8 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const router = useRouter()
+
   useEffect(() => {
     // Log error to console in development
     if (process.env.NODE_ENV === 'development') {
@@ -62,7 +65,7 @@ export default function Error({
             Intentar de nuevo
           </Button>
           <Button
-            onClick={() => window.location.replace('/dashboard')}
+            onClick={() => router.push('/dashboard')}
             variant="default"
           >
             Volver al inicio

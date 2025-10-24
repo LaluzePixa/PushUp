@@ -2,13 +2,13 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   Card,
   CardAction,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -62,9 +62,10 @@ export function RegisterCard() {
         setError(result.error || 'Error de registro')
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Error en registro:', err)
-      setError(err.message || 'Error inesperado durante el registro')
+      const errorMessage = err instanceof Error ? err.message : 'Error inesperado durante el registro';
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -78,7 +79,7 @@ export function RegisterCard() {
           Create a new account
         </CardDescription>
         <CardAction>
-          <a href="/login" >Log In</a>
+          <Link href="/login">Log In</Link>
         </CardAction>
       </CardHeader>
       <CardContent>

@@ -16,8 +16,7 @@ export const SiteGuard: React.FC<SiteGuardProps> = ({ children }) => {
         console.log('🔍 SiteGuard useEffect:', {
             selectedSite: selectedSite?.name,
             sitesLength: sites.length,
-            loading,
-            shouldShowSelector
+            loading
         });
 
         // Solo ocultar selector si hay un sitio seleccionado

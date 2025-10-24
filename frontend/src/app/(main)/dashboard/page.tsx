@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuth } from '@/contexts/AuthContext'
+import { useSiteContext } from '@/contexts/SiteContext'
 import Chart from "@/components/Chart"
 import InfoCard from "@/components/InfoCard"
 import MetricCard from "@/components/MetricCard"
@@ -8,6 +9,7 @@ import { MetricsGrid } from "@/components/MetricsGrid"
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
+  const { selectedSite } = useSiteContext()
 
   // Mostrar loading mientras se verifica la autenticación
   if (loading) {
@@ -30,8 +32,12 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center">
         <div>
           <InfoCard
-            title="Welcome to Dashboard"
-            description={user?.email ? `Logged in as: ${user.email}` : ""}
+            title={selectedSite ? `Dashboard - ${selectedSite.name}` : "Dashboard General"}
+            description={
+              selectedSite
+                ? `${selectedSite.domain} | ${user?.email || 'Usuario'}`
+                : `Todos los sitios | ${user?.email || 'Usuario'}`
+            }
           />
         </div>
       </div>

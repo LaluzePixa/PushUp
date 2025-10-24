@@ -111,10 +111,11 @@ export default function Optinp() {
       } else {
         setSaveError('Error al guardar la configuración');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving config:', error);
-      setSaveError(error.message || 'Error al guardar la configuración');
-      alert(`❌ Error al guardar: ${error.message || 'Error desconocido'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Error al guardar la configuración';
+      setSaveError(errorMessage);
+      alert(`❌ Error al guardar: ${errorMessage}`);
     } finally {
       setIsSaving(false);
     }

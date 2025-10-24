@@ -1,7 +1,7 @@
 'use client'
 import InfoCard from "@/components/InfoCard";
 import CreateSegmentModal from "@/components/CreateSegmentModal";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { segmentsService, Segment, tokenUtils } from "@/services/api";
 import { useSiteContext } from "@/contexts/SiteContext";
 
@@ -22,7 +22,7 @@ export default function SegmentsPage() {
     });
 
     // Cargar segmentos
-    const loadSegments = async (page = 1, search = "") => {
+    const loadSegments = useCallback(async (page = 1, search = "") => {
         try {
             setLoading(true);
             setError(null);
@@ -45,34 +45,39 @@ export default function SegmentsPage() {
                 console.error('❌ Formato de respuesta inesperado:', response);
                 setError('Error al cargar segmentos - formato de respuesta inválido');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('❌ Error loading segments:', err);
 
             // Proporcionar más detalles del error
             let errorMessage = 'Error al conectar con el servidor';
 
-            if (err.status === 401) {
-                errorMessage = 'No estás autenticado. Por favor, inicia sesión nuevamente.';
-            } else if (err.status === 403) {
-                errorMessage = 'No tienes permisos para acceder a los segmentos.';
-            } else if (err.status === 404) {
-                errorMessage = 'El endpoint de segmentos no fue encontrado.';
-            } else if (err.message) {
-                errorMessage = `Error: ${err.message}`;
+            if (err && typeof err === 'object' && 'status' in err) {
+                const apiError = err as { status: number; message?: string };
+                if (apiError.status === 401) {
+                    errorMessage = 'No estás autenticado. Por favor, inicia sesión nuevamente.';
+                } else if (apiError.status === 403) {
+                    errorMessage = 'No tienes permisos para ver los segmentos.';
+                } else if (apiError.status === 404) {
+                    errorMessage = 'No se encontraron segmentos.';
+                } else if (apiError.message) {
+                    errorMessage = apiError.message;
+                }
+            } else if (err instanceof Error) {
+                errorMessage = err.message;
             }
 
             setError(errorMessage);
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedSite?.id, selectedSite?.name]);
 
     // Efecto para cargar segmentos cuando cambie el sitio seleccionado
     useEffect(() => {
         if (selectedSite) {
             loadSegments();
         }
-    }, [selectedSite]);
+    }, [selectedSite, loadSegments]);
 
     // Efecto para cargar segmentos al montar el componente
     useEffect(() => {
@@ -90,7 +95,7 @@ export default function SegmentsPage() {
         if (selectedSite) {
             loadSegments();
         }
-    }, []);
+    }, [loadSegments, selectedSite]);
 
     // Efecto para búsqueda con debounce
     useEffect(() => {
@@ -103,7 +108,7 @@ export default function SegmentsPage() {
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [searchTerm]);
+    }, [searchTerm, loadSegments]);
 
     // Manejar eliminación de segmento
     const handleDeleteSegment = async (segmentId: number) => {

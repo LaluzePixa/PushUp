@@ -172,9 +172,10 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
 
                 vapidPublicKey = vapidResponse.data.publicKey;
                 console.log('[usePushNotifications] Clave VAPID obtenida:', vapidPublicKey);
-            } catch (vapidError: any) {
+            } catch (vapidError: unknown) {
                 console.error('[usePushNotifications] Error al obtener VAPID:', vapidError);
-                setError(`Error al obtener clave VAPID del servidor: ${vapidError?.message || 'Error desconocido'}`);
+                const errorMessage = vapidError instanceof Error ? vapidError.message : 'Error desconocido';
+                setError(`Error al obtener clave VAPID del servidor: ${errorMessage}`);
                 return false;
             }
 
@@ -232,9 +233,10 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
                 return false;
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error en suscripción:', error);
-            setError(error.message || 'Error al suscribirse a notificaciones');
+            const errorMessage = error instanceof Error ? error.message : 'Error al suscribirse a notificaciones';
+            setError(errorMessage);
             return false;
         } finally {
             setLoading(false);
@@ -262,9 +264,10 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
             }
 
             return false;
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error al cancelar suscripción:', error);
-            setError(error.message || 'Error al cancelar suscripción');
+            const errorMessage = error instanceof Error ? error.message : 'Error al cancelar suscripción';
+            setError(errorMessage);
             return false;
         } finally {
             setLoading(false);

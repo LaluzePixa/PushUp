@@ -1,7 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { authService, User, LoginCredentials, RegisterData } from '@/services/api';
+import { checkAuth } from '@/lib/auth';
 
 interface AuthContextType {
     user: User | null;
@@ -27,45 +29,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     /**
      * Obtener información del usuario actual desde el backend
+     * Ahora usa la nueva función de verificación segura
      */
     const refreshUser = async () => {
         try {
-            console.log('🔄 Obteniendo datos del usuario del backend...');
-            const response = await authService.getCurrentUser();
-            if (response.user) {
-                console.log('✅ Usuario autenticado:', response.user.email);
-                setUser(response.user);
+            console.log('🔄 Verificando sesión segura...');
+            const authStatus = await checkAuth();
+
+            if (authStatus.isAuthenticated && authStatus.user) {
+                console.log('✅ Usuario autenticado:', authStatus.user.email);
+                setUser(authStatus.user);
             } else {
-                console.log('❌ Respuesta sin usuario, limpiando sesión');
+                console.log('❌ No hay sesión válida');
                 setUser(null);
-                authService.logout();
             }
         } catch (error) {
             console.error('❌ Error refreshing user:', error);
-            console.log('🗑️ Token inválido, limpiando sesión');
+            console.log('🗑️ Sesión inválida, limpiando estado');
             setUser(null);
-            authService.logout();
         }
     };
 
     /**
      * Inicializar autenticación al cargar la aplicación
+     * Ahora usa verificación de sesión segura sin tokens en localStorage
      */
     useEffect(() => {
         const initializeAuth = async () => {
             setLoading(true);
 
-            // Verificar si hay token almacenado
-            const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+            console.log('🔄 Inicializando auth con verificación de sesión...');
 
-            console.log('🔄 Inicializando auth, token encontrado:', !!token);
-
-            if (token) {
-                console.log('🔍 Verificando token con backend...');
-                await refreshUser();
-            } else {
-                console.log('❌ No hay token, usuario no autenticado');
-            }
+            // Verificar sesión actual usando HTTP-only cookies
+            await refreshUser();
 
             setLoading(false);
         };
@@ -96,11 +92,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.log('❌ Login falló - respuesta incompleta');
                 return { success: false, error: response.error?.message || 'Error de autenticación' };
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('❌ Error en login:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Error al iniciar sesión';
             return {
                 success: false,
-                error: error.message || 'Error al iniciar sesión'
+                error: errorMessage
             };
         } finally {
             setLoading(false);
@@ -119,11 +116,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             } else {
                 return { success: false, error: response.error?.message || 'Error de registro' };
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Register error:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Error al registrarse';
             return {
                 success: false,
-                error: error.message || 'Error al registrarse'
+                error: errorMessage
             };
         } finally {
             setLoading(false);
@@ -132,30 +130,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     /**
      * Función de cierre de sesión
+     * Ahora usa navegación segura sin hard redirects
      */
-    const logout = () => {
+    const logout = async () => {
         console.log('🚪 Cerrando sesión...');
 
-        // Limpiar el estado del usuario
+        // Limpiar el estado del usuario primero
         setUser(null);
 
-        // Limpiar todos los datos almacenados
-        if (typeof window !== 'undefined') {
-            // Limpiar autenticación
-            authService.logout();
-
-            // Limpiar sitio seleccionado
-            localStorage.removeItem('selectedSiteId');
-
-            // Limpiar cualquier otro dato que pueda quedar
-            localStorage.removeItem('user-email');
-
-            console.log('✅ Sesión cerrada, redirigiendo al login');
-
-            // Usar replace() en lugar de href para evitar problemas con chunks
-            // replace() hace un hard reload que limpia todos los chunks de Next.js
-            window.location.replace('/login');
+        try {
+            // Llamar al endpoint de logout para limpiar la sesión del servidor
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+        } catch (error) {
+            console.error('Error during logout:', error);
         }
+
+        // Limpiar datos del cliente solo si es necesario (legacy cleanup)
+        if (typeof window !== 'undefined') {
+            // Limpiar localStorage legacy data
+            localStorage.removeItem('selectedSiteId');
+            localStorage.removeItem('user-email');
+            // Note: auth_token will be removed by server-side session management
+        }
+
+        console.log('✅ Sesión cerrada correctamente');
     };
 
     // Computed properties
@@ -201,15 +202,14 @@ export const useAuth = (): AuthContextType => {
  */
 export const useRequireAuth = () => {
     const { isAuthenticated, loading, user } = useAuth();
+    const router = useRouter();
 
     useEffect(() => {
         if (!loading && !isAuthenticated) {
-            // Redirigir al login con hard reload
-            if (typeof window !== 'undefined') {
-                window.location.replace('/login');
-            }
+            // Usar Next.js router para navegación SPA
+            router.replace('/login');
         }
-    }, [isAuthenticated, loading]);
+    }, [isAuthenticated, loading, router]);
 
     return { isAuthenticated, loading, user };
 };
@@ -219,15 +219,14 @@ export const useRequireAuth = () => {
  */
 export const useRequireAdmin = () => {
     const { isAdmin, loading, user } = useAuth();
+    const router = useRouter();
 
     useEffect(() => {
         if (!loading && !isAdmin) {
-            // Redirigir al dashboard o mostrar error de permisos con hard reload
-            if (typeof window !== 'undefined') {
-                window.location.replace('/dashboard');
-            }
+            // Usar Next.js router para navegación SPA
+            router.replace('/dashboard');
         }
-    }, [isAdmin, loading]);
+    }, [isAdmin, loading, router]);
 
     return { isAdmin, loading, user };
 };

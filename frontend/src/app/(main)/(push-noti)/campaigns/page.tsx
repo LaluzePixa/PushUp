@@ -3,6 +3,7 @@ import InfoCard from "@/components/InfoCard";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, ChevronUp, ChevronDown, Info } from "lucide-react";
 import { campaignsService, Campaign } from "@/services/api";
+import { useSiteContext } from '@/contexts/SiteContext';
 import CreateCampaignModal from "@/components/CreateCampaignModal";
 
 type SortField = 'name' | 'dateCreated' | 'status';
@@ -22,6 +23,7 @@ export default function Campaigns() {
     total: 0,
     pages: 0
   });
+  const { selectedSite } = useSiteContext();
 
   // Cargar campañas desde el backend
   const loadCampaigns = useCallback(async () => {
@@ -29,10 +31,12 @@ export default function Campaigns() {
       setIsLoading(true);
       setError(null);
 
+      // Include selected site filter if available
       const response = await campaignsService.getCampaigns({
         page: pagination.current,
         limit: pagination.limit,
-        search: searchTerm || undefined
+        search: searchTerm || undefined,
+        siteId: selectedSite?.id
       });
 
       if (response.success && response.data) {
@@ -47,11 +51,26 @@ export default function Campaigns() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, pagination.current, pagination.limit]);
+  }, [searchTerm, pagination, selectedSite?.id]);
 
   useEffect(() => {
     loadCampaigns();
   }, [loadCampaigns]);
+
+  // When selected site changes, clear campaigns and reload
+  useEffect(() => {
+    // Reset listing to avoid showing campaigns from previous site
+    setCampaigns([]);
+    setPagination(prev => ({ ...prev, current: 1, total: 0, pages: 0 }));
+    // If no site is selected, set loading to false and do not fetch
+    if (!selectedSite) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Trigger reload via loadCampaigns
+    loadCampaigns();
+  }, [selectedSite, loadCampaigns]);
 
   // Cerrar dropdowns al hacer clic fuera
   useEffect(() => {
@@ -90,9 +109,10 @@ export default function Campaigns() {
       } else {
         alert('Error al enviar la campaña');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error sending campaign:', error);
-      alert(`Error al enviar la campaña: ${error.message || 'Error desconocido'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`Error al enviar la campaña: ${errorMessage}`);
     }
   };
 
@@ -107,14 +127,15 @@ export default function Campaigns() {
       alert('Campaña eliminada exitosamente');
       // Recargar campañas
       handleCampaignCreated();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting campaign:', error);
-      alert(`Error al eliminar la campaña: ${error.message || 'Error desconocido'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`Error al eliminar la campaña: ${errorMessage}`);
     }
   };
 
   // Función para editar una campaña (por implementar)
-  const handleEditCampaign = (campaignId: string) => {
+  const handleEditCampaign = () => {
     alert('Funcionalidad de edición en desarrollo');
     // TODO: Implementar modal de edición de campaña
   };
@@ -434,7 +455,7 @@ export default function Campaigns() {
                             {(campaign.status === 'Pending' || campaign.status === 'Scheduled') && (
                               <button
                                 onClick={() => {
-                                  handleEditCampaign(campaign.id);
+                                  handleEditCampaign();
                                   document.getElementById(`dropdown-${campaign.id}`)?.classList.add('hidden');
                                 }}
                                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"

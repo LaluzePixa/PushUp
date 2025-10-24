@@ -10,18 +10,20 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { dashboardService, Subscription } from "@/services/api";
+import { useSiteContext } from "@/contexts/SiteContext";
 
 export default function Tables() {
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { selectedSite } = useSiteContext();
 
     const fetchSubscriptions = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
 
-            const response = await dashboardService.getSubscriptions(20, 1);
+            const response = await dashboardService.getSubscriptions(20, 1, selectedSite?.id);
 
             if (response.success && response.data) {
                 setSubscriptions(response.data);
@@ -34,7 +36,7 @@ export default function Tables() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [selectedSite?.id]); // Dependencia agregada
 
     useEffect(() => {
         fetchSubscriptions();

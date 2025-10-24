@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { dashboardService, AnalyticsDataPoint } from '@/services/api'
+import { useSiteContext } from '@/contexts/SiteContext'
 
 const chartConfig = {
   subscriptions: {
@@ -48,6 +49,7 @@ export default function Chart() {
   const [chartData, setChartData] = useState<AnalyticsDataPoint[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { selectedSite } = useSiteContext()
 
   // Cargar datos analíticos
   const fetchAnalytics = useCallback(async () => {
@@ -55,7 +57,7 @@ export default function Chart() {
       setLoading(true)
       setError(null)
 
-      const response = await dashboardService.getAnalytics(parseInt(timeRange))
+      const response = await dashboardService.getAnalytics(parseInt(timeRange), selectedSite?.id)
 
       if (response.success && response.data) {
         setChartData(response.data)
@@ -68,7 +70,7 @@ export default function Chart() {
     } finally {
       setLoading(false)
     }
-  }, [timeRange])
+  }, [timeRange, selectedSite?.id]) // Dependencia agregada: selectedSite?.id
 
   useEffect(() => {
     fetchAnalytics()

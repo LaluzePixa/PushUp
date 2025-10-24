@@ -1,7 +1,7 @@
 'use client'
 
 import { useSiteContext } from '@/contexts/SiteContext';
-import SidebarLayout from '@/components/sidebar';
+import SidebarLayout from '@/components/sidebar-optimized';
 
 interface SiteLayoutWrapperProps {
     children: React.ReactNode;

@@ -68,17 +68,24 @@ export default function SelectSitePage() {
         setIsCreateModalOpen(false);
         router.push('/dashboard');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating site:', error);
 
-      if (error.status === 409 || error.code === 'DOMAIN_EXISTS') {
-        setError('Ya tienes un sitio registrado con este dominio.');
-      } else if (error.status === 403 || error.code === 'SITES_LIMIT_EXCEEDED') {
-        setError('Has alcanzado el límite máximo de sitios permitidos (5 sitios).');
-      } else if (error.status === 400 || error.code === 'VALIDATION_ERROR') {
-        setError('Los datos del sitio no son válidos. Verifica el formato del dominio.');
+      if (error && typeof error === 'object') {
+        const apiError = error as { status?: number; code?: string; message?: string };
+        if (apiError.status === 409 || apiError.code === 'DOMAIN_EXISTS') {
+          setError('Ya tienes un sitio registrado con este dominio.');
+        } else if (apiError.status === 403 || apiError.code === 'SITES_LIMIT_EXCEEDED') {
+          setError('Has alcanzado el límite máximo de sitios permitidos (5 sitios).');
+        } else if (apiError.status === 400 || apiError.code === 'VALIDATION_ERROR') {
+          setError('Los datos del sitio no son válidos. Verifica el formato del dominio.');
+        } else {
+          setError(apiError.message || 'Error al crear el sitio');
+        }
+      } else if (error instanceof Error) {
+        setError(error.message);
       } else {
-        setError(error.message || 'Error al crear el sitio');
+        setError('Error al crear el sitio');
       }
     } finally {
       setIsCreating(false);

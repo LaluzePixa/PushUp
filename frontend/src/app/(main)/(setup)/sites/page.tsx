@@ -28,16 +28,17 @@ export default function SitesPage() {
                 setLoading(true);
                 setError(null);
                 await refreshSites();
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('Error loading sites:', err);
-                setError('Error al cargar los sitios');
+                const errorMessage = err instanceof Error ? err.message : 'Error al cargar los sitios';
+                setError(errorMessage);
             } finally {
                 setLoading(false);
             }
         };
 
         loadSites();
-    }, []);
+    }, [refreshSites]);
 
     // Filtrar sitios por término de búsqueda
     const filteredSites = sites.filter(site =>
@@ -67,9 +68,10 @@ export default function SitesPage() {
                 await refreshSites();
                 alert('Sitio creado exitosamente');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error creating site:', err);
-            alert(`Error al crear el sitio: ${err.message || 'Error desconocido'}`);
+            const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+            alert(`Error al crear el sitio: ${errorMessage}`);
         }
     };
 
@@ -92,9 +94,10 @@ export default function SitesPage() {
                 await refreshSites();
                 alert('Sitio actualizado exitosamente');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error updating site:', err);
-            alert(`Error al actualizar el sitio: ${err.message || 'Error desconocido'}`);
+            const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+            alert(`Error al actualizar el sitio: ${errorMessage}`);
         }
     };
 
@@ -108,9 +111,10 @@ export default function SitesPage() {
             await sitesService.deleteSite(site.id);
             await refreshSites();
             alert('Sitio eliminado exitosamente');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error deleting site:', err);
-            alert(`Error al eliminar el sitio: ${err.message || 'Error desconocido'}`);
+            const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+            alert(`Error al eliminar el sitio: ${errorMessage}`);
         }
     };
 

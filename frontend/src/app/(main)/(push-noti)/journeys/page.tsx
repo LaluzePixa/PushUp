@@ -13,6 +13,8 @@ export default function JourneyPage() {
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage] = useState(1);
+  const [pageLimit] = useState(20);
   const [pagination, setPagination] = useState({
     current: 1,
     limit: 20,
@@ -28,16 +30,14 @@ export default function JourneyPage() {
         setError(null);
 
         const response = await dashboardService.getJourneys({
-          page: pagination.current,
-          limit: pagination.limit,
+          page: currentPage,
+          limit: pageLimit,
           search: searchTerm || undefined
         });
 
-        if (response.success && response.data) {
+        if (response.data?.journeys && response.data?.pagination) {
           setJourneys(response.data.journeys);
           setPagination(response.data.pagination);
-        } else {
-          setError('No se pudieron cargar los journeys');
         }
       } catch (err) {
         console.error('Error loading journeys:', err);
@@ -48,7 +48,7 @@ export default function JourneyPage() {
     };
 
     loadJourneys();
-  }, [searchTerm, pagination.current]);
+  }, [searchTerm, currentPage, pageLimit]);
 
   const getStatusBadge = (status: Journey['status']) => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-medium";

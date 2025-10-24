@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from "react";
 import { dashboardService, RecentCampaign } from "@/services/api";
+import { useSiteContext } from "@/contexts/SiteContext";
 
 export default function SubscriptionPage() {
   // Styling options state
@@ -34,6 +35,7 @@ export default function SubscriptionPage() {
   const [recentCampaigns, setRecentCampaigns] = useState<RecentCampaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { selectedSite } = useSiteContext();
 
   // Load real campaigns data
   useEffect(() => {
@@ -41,7 +43,7 @@ export default function SubscriptionPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await dashboardService.getRecentCampaigns(3);
+        const response = await dashboardService.getRecentCampaigns(3, selectedSite?.id);
 
         if (response.success && response.data) {
           setRecentCampaigns(response.data);
@@ -57,7 +59,7 @@ export default function SubscriptionPage() {
     };
 
     loadRecentCampaigns();
-  }, []);
+  }, [selectedSite?.id]); // Dependencia agregada
 
   // Use real campaigns or fallback to default message
   const displayNotifications = recentCampaigns.length > 0
@@ -329,8 +331,8 @@ export default function SubscriptionPage() {
                   key={tab}
                   onClick={() => setPreviewTab(tab)}
                   className={`px-3 py-1 text-xs rounded transition-colors ${previewTab === tab
-                      ? 'bg-blue-500 text-white'
-                      : 'text-gray-600 hover:bg-white'
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-600 hover:bg-white'
                     }`}
                 >
                   {tab}

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { campaignsService, sitesService, Site, CampaignFormData } from '@/services/api';
+import { campaignsService, CampaignFormData } from '@/services/api';
 import { useSiteContext } from '@/contexts/SiteContext';
 
 interface CreateCampaignModalProps {
@@ -93,18 +93,23 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
       } else {
         setError('Error al crear la campaña');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Error creating campaign:', err);
 
       let errorMessage = 'Error al crear la campaña';
 
-      if (err.status === 400) {
-        errorMessage = 'Datos de campaña inválidos. Verifica los campos requeridos.';
-      } else if (err.status === 401) {
-        errorMessage = 'No estás autenticado. Por favor, inicia sesión nuevamente.';
-      } else if (err.status === 403) {
-        errorMessage = 'No tienes permisos para crear campañas.';
-      } else if (err.message) {
+      if (err && typeof err === 'object' && 'status' in err) {
+        const apiError = err as { status: number; message?: string };
+        if (apiError.status === 400) {
+          errorMessage = 'Datos de campaña inválidos. Verifica los campos requeridos.';
+        } else if (apiError.status === 401) {
+          errorMessage = 'No estás autenticado. Por favor, inicia sesión nuevamente.';
+        } else if (apiError.status === 403) {
+          errorMessage = 'No tienes permisos para crear campañas.';
+        } else if (apiError.message) {
+          errorMessage = `Error: ${apiError.message}`;
+        }
+      } else if (err instanceof Error) {
         errorMessage = `Error: ${err.message}`;
       }
 

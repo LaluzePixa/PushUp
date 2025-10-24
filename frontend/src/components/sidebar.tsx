@@ -20,7 +20,6 @@ import {
   Sun,
   Moon,
   User,
-  X,
   LogOut,
   UserCircle,
   Globe,
@@ -68,7 +67,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { sitesService, Site } from "@/services/api"
+import { sitesService } from "@/services/api"
 
 // Definir el tipo Item:
 type Item = {
@@ -384,23 +383,29 @@ function SiteSelector() {
         // Mostrar mensaje de éxito
         alert(`¡Sitio "${response.data.name}" creado exitosamente!`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating site:', error);
 
       // Mostrar mensaje de error específico al usuario
       let errorMessage = 'Error al crear el sitio';
 
-      if (error.status === 409 || error.code === 'DOMAIN_EXISTS') {
-        errorMessage = 'Ya tienes un sitio registrado con este dominio. Usa un dominio diferente.';
-      } else if (error.status === 403 || error.code === 'SITES_LIMIT_EXCEEDED') {
-        errorMessage = 'Has alcanzado el límite máximo de sitios permitidos (5 sitios).';
-      } else if (error.status === 400 || error.code === 'VALIDATION_ERROR') {
-        if (error.details && Array.isArray(error.details)) {
-          errorMessage = `Datos inválidos: ${error.details.join(', ')}`;
-        } else {
-          errorMessage = 'Los datos del sitio no son válidos. Verifica el formato del dominio.';
+      if (error && typeof error === 'object') {
+        const apiError = error as { status?: number; code?: string; details?: string[]; message?: string };
+
+        if (apiError.status === 409 || apiError.code === 'DOMAIN_EXISTS') {
+          errorMessage = 'Ya tienes un sitio registrado con este dominio. Usa un dominio diferente.';
+        } else if (apiError.status === 403 || apiError.code === 'SITES_LIMIT_EXCEEDED') {
+          errorMessage = 'Has alcanzado el límite máximo de sitios permitidos (5 sitios).';
+        } else if (apiError.status === 400 || apiError.code === 'VALIDATION_ERROR') {
+          if (apiError.details && Array.isArray(apiError.details)) {
+            errorMessage = `Datos inválidos: ${apiError.details.join(', ')}`;
+          } else {
+            errorMessage = 'Los datos del sitio no son válidos. Verifica el formato del dominio.';
+          }
+        } else if (apiError.message) {
+          errorMessage = apiError.message;
         }
-      } else if (error.message) {
+      } else if (error instanceof Error) {
         errorMessage = error.message;
       }
 
@@ -575,7 +580,6 @@ function NavItem({
   setOpenMenuIndex: (idx: number | null) => void
 }) {
   const pathname = usePathname()
-  const [isOpen, setIsOpen] = React.useState(false)
 
   const isActive = item.url ? isRouteActive(pathname, item.url, item.isCollapsible) : false
   const hasActiveSub = hasActiveSubItem(pathname, item.items)
@@ -607,7 +611,7 @@ function NavItem({
                   {item.badge}
                 </span>
               )}
-              <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${currentlyOpen ? 'rotate-180' : ''}`} />
             </SidebarMenuButton>
           </CollapsibleTrigger>
           <CollapsibleContent>
@@ -676,18 +680,16 @@ function NavItem({
   )
 }
 
-// Hook para obtener el usuario
+// Hook para obtener el usuario con SSR safety
 const useUser = () => {
-  const [userEmail, setUserEmail] = React.useState('')
+  const { user } = useAuth()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
-    const email = localStorage.getItem('user-email') || 'Miguel Ialuze'
-    setUserEmail(email)
   }, [])
 
-  // Solo retornar el usuario cuando esté montado para evitar diferencias de hidratación
+  // Prevent hydration mismatch by returning consistent data on server and initial client render
   if (!mounted) {
     return {
       name: 'Usuario',
@@ -696,21 +698,23 @@ const useUser = () => {
   }
 
   return {
-    name: userEmail || 'Usuario',
-    email: userEmail
+    name: user?.email || 'Usuario',
+    email: user?.email || ''
   }
 }
 
 // Componente del dropdown de usuario
 function UserDropdown({ user }: { user: { name: string; email?: string } }) {
   const { logout } = useAuth()
+  const router = useRouter()
 
   const handleLogout = () => {
     console.log('🚪 Cerrando sesión...')
     // Usar el método del AuthContext que maneja toda la limpieza
-    // Esto actualiza el estado de React, limpia tokens y redirige
     logout()
     console.log('✅ Sesión cerrada correctamente')
+    // Navigate using Next.js router after logout
+    router.push('/login')
   }
 
   return (

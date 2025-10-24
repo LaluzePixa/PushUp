@@ -3,23 +3,15 @@
 import React, { useState, memo } from 'react';
 import { Globe, Plus } from 'lucide-react';
 import { Button } from './ui/button';
-import { Card } from './ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useSiteContext } from '@/contexts/SiteContext';
+import { Site } from '@/services/api';
 
 interface SiteItemProps {
-    site: {
-        id: number;
-        name: string;
-        domain: string;
-        description?: string;
-        isActive?: boolean;
-        subscribersCount?: number;
-        lastActivity?: string;
-    };
-    onSelect: (site: any) => void;
+    site: Site;
+    onSelect: (site: Site) => void;
     isSelected: boolean;
 }
 
@@ -28,8 +20,8 @@ const SiteItem = memo<SiteItemProps>(({ site, onSelect, isSelected }) => {
     return (
         <div
             className={`cursor-pointer p-3 rounded-md border transition-all hover:bg-gray-50 dark:hover:bg-gray-800 ${isSelected
-                    ? 'bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700'
-                    : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
+                ? 'bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700'
+                : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700'
                 }`}
             onClick={() => onSelect(site)}
         >

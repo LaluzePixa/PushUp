@@ -10,16 +10,16 @@ const router = express.Router();
 router.get('/analytics', authenticateToken, async (req, res) => {
     try {
         const { pool } = req.app.locals;
-        const { period = '30' } = req.query; // días
+        const { period = '30', siteId } = req.query; // días y siteId
         const userId = req.user.id;
         const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
 
         let analyticsData;
 
         if (isAdmin) {
-            analyticsData = await getGlobalAnalytics(pool, parseInt(period));
+            analyticsData = await getGlobalAnalytics(pool, parseInt(period), siteId ? parseInt(siteId) : null);
         } else {
-            analyticsData = await getUserAnalytics(pool, userId, parseInt(period));
+            analyticsData = await getUserAnalytics(pool, userId, parseInt(period), siteId ? parseInt(siteId) : null);
         }
 
         res.json({
@@ -42,7 +42,11 @@ router.get('/analytics', authenticateToken, async (req, res) => {
 /**
  * Obtener analytics globales para administradores
  */
-async function getGlobalAnalytics(pool, days) {
+async function getGlobalAnalytics(pool, days, siteId = null) {
+    // Condiciones adicionales para filtrar por sitio
+    const siteCondition = siteId ? `AND site_id = ${siteId}` : '';
+    const userSiteCondition = siteId ? `AND st.id = ${siteId}` : '';
+
     // Generar datos por día para los últimos N días
     const analyticsQuery = `
     WITH date_series AS (
@@ -54,18 +58,19 @@ async function getGlobalAnalytics(pool, days) {
     ),
     daily_users AS (
       SELECT 
-        DATE(created_at) as date,
+        DATE(u.created_at) as date,
         COUNT(*) as new_users
-      FROM users
-      WHERE created_at >= CURRENT_DATE - INTERVAL '${days} days'
-      GROUP BY DATE(created_at)
+      FROM users u
+      ${siteId ? 'JOIN sites st ON u.id = st.user_id' : ''}
+      WHERE u.created_at >= CURRENT_DATE - INTERVAL '${days} days' ${userSiteCondition}
+      GROUP BY DATE(u.created_at)
     ),
     daily_subscriptions AS (
       SELECT 
         DATE(created_at) as date,
         COUNT(*) as new_subscriptions
       FROM subscriptions
-      WHERE created_at >= CURRENT_DATE - INTERVAL '${days} days'
+      WHERE created_at >= CURRENT_DATE - INTERVAL '${days} days' ${siteCondition}
       GROUP BY DATE(created_at)
     ),
     daily_campaigns AS (
@@ -73,7 +78,7 @@ async function getGlobalAnalytics(pool, days) {
         DATE(created_at) as date,
         COUNT(*) as campaigns_created
       FROM campaigns
-      WHERE created_at >= CURRENT_DATE - INTERVAL '${days} days'
+      WHERE created_at >= CURRENT_DATE - INTERVAL '${days} days' ${siteCondition}
       GROUP BY DATE(created_at)
     )
     SELECT 
@@ -101,7 +106,16 @@ async function getGlobalAnalytics(pool, days) {
 /**
  * Obtener analytics específicos del usuario
  */
-async function getUserAnalytics(pool, userId, days) {
+async function getUserAnalytics(pool, userId, days, siteId = null) {
+    // Condición adicional para filtrar por sitio específico
+    const siteCondition = siteId ? `AND st.id = $2 AND s.site_id = $2` : '';
+    const campaignSiteCondition = siteId ? `AND s.id = $2 AND c.site_id = $2` : '';
+
+    const queryParams = [userId];
+    if (siteId) {
+        queryParams.push(siteId);
+    }
+
     const analyticsQuery = `
     WITH date_series AS (
       SELECT generate_series(
@@ -116,7 +130,7 @@ async function getUserAnalytics(pool, userId, days) {
         COUNT(*) as new_subscriptions
       FROM subscriptions s
       JOIN sites st ON s.site_id = st.id
-      WHERE st.user_id = $1 AND s.created_at >= CURRENT_DATE - INTERVAL '${days} days'
+      WHERE st.user_id = $1 AND s.created_at >= CURRENT_DATE - INTERVAL '${days} days' ${siteCondition}
       GROUP BY DATE(s.created_at)
     ),
     user_campaigns AS (
@@ -125,7 +139,7 @@ async function getUserAnalytics(pool, userId, days) {
         COUNT(*) as campaigns_created
       FROM campaigns c
       JOIN sites s ON c.site_id = s.id
-      WHERE s.user_id = $1 AND c.created_at >= CURRENT_DATE - INTERVAL '${days} days'
+      WHERE s.user_id = $1 AND c.created_at >= CURRENT_DATE - INTERVAL '${days} days' ${campaignSiteCondition}
       GROUP BY DATE(c.created_at)
     )
     SELECT 
@@ -138,7 +152,7 @@ async function getUserAnalytics(pool, userId, days) {
     ORDER BY ds.date
   `;
 
-    const result = await pool.query(analyticsQuery, [userId]);
+    const result = await pool.query(analyticsQuery, queryParams);
 
     return result.rows.map(row => ({
         date: row.date.toISOString().split('T')[0],
@@ -154,6 +168,7 @@ async function getUserAnalytics(pool, userId, days) {
 router.get('/metrics', authenticateToken, async (req, res) => {
     try {
         const { pool } = req.app.locals;
+        const { siteId } = req.query;
         const userId = req.user.id;
 
         // Obtener métricas según el rol del usuario
@@ -163,10 +178,10 @@ router.get('/metrics', authenticateToken, async (req, res) => {
 
         if (isAdmin) {
             // Métricas globales para administradores
-            metrics = await getGlobalMetrics(pool);
+            metrics = await getGlobalMetrics(pool, siteId ? parseInt(siteId) : null);
         } else {
             // Métricas específicas del usuario
-            metrics = await getUserMetrics(pool, userId);
+            metrics = await getUserMetrics(pool, userId, siteId ? parseInt(siteId) : null);
         }
 
         res.json({
@@ -189,8 +204,12 @@ router.get('/metrics', authenticateToken, async (req, res) => {
 /**
  * Obtener métricas globales para administradores
  */
-async function getGlobalMetrics(pool) {
+async function getGlobalMetrics(pool, siteId = null) {
     try {
+        // Construir condiciones basadas en siteId
+        const siteCondition = siteId ? `WHERE site_id = ${siteId}` : '';
+        const siteJoinCondition = siteId ? `AND s.id = ${siteId}` : '';
+
         const [
             totalUsersResult,
             activeUsersResult,
@@ -201,26 +220,38 @@ async function getGlobalMetrics(pool) {
             campaignStatsResult,
             recentCampaignsResult
         ] = await Promise.all([
-            // Total de usuarios
-            pool.query('SELECT COUNT(*) FROM users'),
+            // Total de usuarios (solo para sitio específico si se especifica)
+            siteId ?
+                pool.query('SELECT COUNT(DISTINCT u.id) FROM users u JOIN sites s ON u.id = s.user_id WHERE s.id = $1', [siteId]) :
+                pool.query('SELECT COUNT(*) FROM users'),
 
-            // Usuarios activos (últimos 30 días) - usando created_at si last_login no existe
-            pool.query(`
-                SELECT COUNT(*) FROM users 
-                WHERE created_at >= NOW() - INTERVAL '30 days'
-            `),
+            // Usuarios activos (últimos 30 días)
+            siteId ?
+                pool.query(`
+                    SELECT COUNT(DISTINCT u.id) FROM users u 
+                    JOIN sites s ON u.id = s.user_id 
+                    WHERE u.created_at >= NOW() - INTERVAL '30 days' AND s.id = $1
+                `, [siteId]) :
+                pool.query(`
+                    SELECT COUNT(*) FROM users 
+                    WHERE created_at >= NOW() - INTERVAL '30 days'
+                `),
 
             // Total de sitios
-            pool.query('SELECT COUNT(*) FROM sites'),
+            siteId ?
+                pool.query('SELECT 1 as count') : // Si filtramos por sitio, solo hay 1 sitio
+                pool.query('SELECT COUNT(*) FROM sites'),
 
             // Sitios activos
-            pool.query('SELECT COUNT(*) FROM sites WHERE is_active = true'),
+            siteId ?
+                pool.query('SELECT CASE WHEN is_active THEN 1 ELSE 0 END as count FROM sites WHERE id = $1', [siteId]) :
+                pool.query('SELECT COUNT(*) FROM sites WHERE is_active = true'),
 
             // Total de suscripciones
-            pool.query('SELECT COUNT(*) FROM subscriptions'),
+            pool.query(`SELECT COUNT(*) FROM subscriptions ${siteCondition}`),
 
             // Total de campañas
-            pool.query('SELECT COUNT(*) FROM campaigns'),
+            pool.query(`SELECT COUNT(*) FROM campaigns ${siteCondition}`),
 
             // Estadísticas de campañas por estado
             pool.query(`
@@ -228,13 +259,14 @@ async function getGlobalMetrics(pool) {
                     status,
                     COUNT(*) as count
                 FROM campaigns 
+                ${siteCondition}
                 GROUP BY status
             `),
 
             // Campañas recientes (últimos 7 días)
             pool.query(`
                 SELECT COUNT(*) FROM campaigns 
-                WHERE created_at >= NOW() - INTERVAL '7 days'
+                WHERE created_at >= NOW() - INTERVAL '7 days' ${siteId ? `AND site_id = ${siteId}` : ''}
             `)
         ]);
 
@@ -390,8 +422,16 @@ async function getGlobalMetrics(pool) {
 /**
  * Obtener métricas específicas del usuario
  */
-async function getUserMetrics(pool, userId) {
+async function getUserMetrics(pool, userId, siteId = null) {
     try {
+        // Construir queries basados en si hay siteId específico
+        const queryParams = [userId];
+        const siteIdParam = siteId ? siteId : null;
+
+        if (siteId) {
+            queryParams.push(siteId);
+        }
+
         const [
             userSitesResult,
             userSubscriptionsResult,
@@ -399,23 +439,38 @@ async function getUserMetrics(pool, userId) {
             userActiveCampaignsResult
         ] = await Promise.all([
             // Sitios del usuario
-            pool.query('SELECT COUNT(*) FROM sites WHERE user_id = $1', [userId]),
+            siteId ?
+                pool.query('SELECT COUNT(*) FROM sites WHERE user_id = $1 AND id = $2', [userId, siteId]) :
+                pool.query('SELECT COUNT(*) FROM sites WHERE user_id = $1', [userId]),
 
-            // Suscripciones de los sitios del usuario (o todas si no hay sitios)
-            pool.query(`
-                SELECT COUNT(*) FROM subscriptions s
-                LEFT JOIN sites st ON s.site_id = st.id
-                WHERE st.user_id = $1 OR st.id IS NULL
-            `, [userId]),
+            // Suscripciones de los sitios del usuario
+            siteId ?
+                pool.query(`
+                    SELECT COUNT(*) FROM subscriptions s
+                    JOIN sites st ON s.site_id = st.id
+                    WHERE st.user_id = $1 AND st.id = $2
+                `, [userId, siteId]) :
+                pool.query(`
+                    SELECT COUNT(*) FROM subscriptions s
+                    JOIN sites st ON s.site_id = st.id
+                    WHERE st.user_id = $1
+                `, [userId]),
 
-            // Campañas del usuario (directamente por user_id)
-            pool.query('SELECT COUNT(*) FROM campaigns WHERE user_id = $1', [userId]),
+            // Campañas del usuario
+            siteId ?
+                pool.query('SELECT COUNT(*) FROM campaigns WHERE user_id = $1 AND site_id = $2', [userId, siteId]) :
+                pool.query('SELECT COUNT(*) FROM campaigns WHERE user_id = $1', [userId]),
 
             // Campañas activas del usuario
-            pool.query(`
-                SELECT COUNT(*) FROM campaigns 
-                WHERE user_id = $1 AND status IN ('active', 'scheduled', 'sending')
-            `, [userId])
+            siteId ?
+                pool.query(`
+                    SELECT COUNT(*) FROM campaigns 
+                    WHERE user_id = $1 AND site_id = $2 AND status IN ('active', 'scheduled', 'sending')
+                `, [userId, siteId]) :
+                pool.query(`
+                    SELECT COUNT(*) FROM campaigns 
+                    WHERE user_id = $1 AND status IN ('active', 'scheduled', 'sending')
+                `, [userId])
         ]);
 
         const userSites = parseInt(userSitesResult.rows[0].count) || 0;
@@ -562,7 +617,7 @@ async function getUserMetrics(pool, userId) {
 router.get('/subscriptions', authenticateToken, async (req, res) => {
     try {
         const { pool } = req.app.locals;
-        const { limit = 10, page = 1 } = req.query;
+        const { limit = 10, page = 1, siteId } = req.query;
         const userId = req.user.id;
         const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
 
@@ -571,37 +626,73 @@ router.get('/subscriptions', authenticateToken, async (req, res) => {
 
         if (isAdmin) {
             // Obtener todas las suscripciones para administradores
-            subscriptionsQuery = `
-        SELECT 
-          s.id,
-          s.created_at,
-          s.user_agent,
-          s.ip,
-          st.name as site_name,
-          st.domain as site_domain
-        FROM subscriptions s
-        JOIN sites st ON s.site_id = st.id
-        ORDER BY s.created_at DESC
-        LIMIT $1 OFFSET $2
-      `;
-            queryParams = [parseInt(limit), (parseInt(page) - 1) * parseInt(limit)];
+            if (siteId) {
+                subscriptionsQuery = `
+            SELECT 
+              s.id,
+              s.created_at,
+              s.user_agent,
+              s.ip,
+              st.name as site_name,
+              st.domain as site_domain
+            FROM subscriptions s
+            JOIN sites st ON s.site_id = st.id
+            WHERE st.id = $1
+            ORDER BY s.created_at DESC
+            LIMIT $2 OFFSET $3
+          `;
+                queryParams = [parseInt(siteId), parseInt(limit), (parseInt(page) - 1) * parseInt(limit)];
+            } else {
+                subscriptionsQuery = `
+            SELECT 
+              s.id,
+              s.created_at,
+              s.user_agent,
+              s.ip,
+              st.name as site_name,
+              st.domain as site_domain
+            FROM subscriptions s
+            JOIN sites st ON s.site_id = st.id
+            ORDER BY s.created_at DESC
+            LIMIT $1 OFFSET $2
+          `;
+                queryParams = [parseInt(limit), (parseInt(page) - 1) * parseInt(limit)];
+            }
         } else {
             // Obtener solo las suscripciones de los sitios del usuario
-            subscriptionsQuery = `
-        SELECT 
-          s.id,
-          s.created_at,
-          s.user_agent,
-          s.ip,
-          st.name as site_name,
-          st.domain as site_domain
-        FROM subscriptions s
-        JOIN sites st ON s.site_id = st.id
-        WHERE st.user_id = $1
-        ORDER BY s.created_at DESC
-        LIMIT $2 OFFSET $3
-      `;
-            queryParams = [userId, parseInt(limit), (parseInt(page) - 1) * parseInt(limit)];
+            if (siteId) {
+                subscriptionsQuery = `
+            SELECT 
+              s.id,
+              s.created_at,
+              s.user_agent,
+              s.ip,
+              st.name as site_name,
+              st.domain as site_domain
+            FROM subscriptions s
+            JOIN sites st ON s.site_id = st.id
+            WHERE st.user_id = $1 AND st.id = $2
+            ORDER BY s.created_at DESC
+            LIMIT $3 OFFSET $4
+          `;
+                queryParams = [userId, parseInt(siteId), parseInt(limit), (parseInt(page) - 1) * parseInt(limit)];
+            } else {
+                subscriptionsQuery = `
+            SELECT 
+              s.id,
+              s.created_at,
+              s.user_agent,
+              s.ip,
+              st.name as site_name,
+              st.domain as site_domain
+            FROM subscriptions s
+            JOIN sites st ON s.site_id = st.id
+            WHERE st.user_id = $1
+            ORDER BY s.created_at DESC
+            LIMIT $2 OFFSET $3
+          `;
+                queryParams = [userId, parseInt(limit), (parseInt(page) - 1) * parseInt(limit)];
+            }
         }
 
         const result = await pool.query(subscriptionsQuery, queryParams);
@@ -772,7 +863,7 @@ router.get('/segments', authenticateToken, async (req, res) => {
 router.get('/recent-campaigns', authenticateToken, async (req, res) => {
     try {
         const { pool } = req.app.locals;
-        const { limit = 5 } = req.query;
+        const { limit = 5, siteId } = req.query;
         const userId = req.user.id;
         const isAdmin = req.user.role === 'admin' || req.user.role === 'superadmin';
 
@@ -781,37 +872,73 @@ router.get('/recent-campaigns', authenticateToken, async (req, res) => {
 
         if (isAdmin) {
             // Para administradores: todas las campañas
-            campaignsQuery = `
-        SELECT 
-          c.id,
-          c.title,
-          c.body as message,
-          c.created_at,
-          c.status,
-          s.name as site_name
-        FROM campaigns c
-        JOIN sites s ON c.site_id = s.id
-        ORDER BY c.created_at DESC
-        LIMIT $1
-      `;
-            queryParams = [parseInt(limit)];
+            if (siteId) {
+                campaignsQuery = `
+            SELECT 
+              c.id,
+              c.title,
+              c.body as message,
+              c.created_at,
+              c.status,
+              s.name as site_name
+            FROM campaigns c
+            JOIN sites s ON c.site_id = s.id
+            WHERE s.id = $1
+            ORDER BY c.created_at DESC
+            LIMIT $2
+          `;
+                queryParams = [parseInt(siteId), parseInt(limit)];
+            } else {
+                campaignsQuery = `
+            SELECT 
+              c.id,
+              c.title,
+              c.body as message,
+              c.created_at,
+              c.status,
+              s.name as site_name
+            FROM campaigns c
+            JOIN sites s ON c.site_id = s.id
+            ORDER BY c.created_at DESC
+            LIMIT $1
+          `;
+                queryParams = [parseInt(limit)];
+            }
         } else {
             // Para usuarios: solo sus campañas
-            campaignsQuery = `
-        SELECT 
-          c.id,
-          c.title,
-          c.body as message,
-          c.created_at,
-          c.status,
-          s.name as site_name
-        FROM campaigns c
-        JOIN sites s ON c.site_id = s.id
-        WHERE s.user_id = $1
-        ORDER BY c.created_at DESC
-        LIMIT $2
-      `;
-            queryParams = [userId, parseInt(limit)];
+            if (siteId) {
+                campaignsQuery = `
+            SELECT 
+              c.id,
+              c.title,
+              c.body as message,
+              c.created_at,
+              c.status,
+              s.name as site_name
+            FROM campaigns c
+            JOIN sites s ON c.site_id = s.id
+            WHERE s.user_id = $1 AND s.id = $2
+            ORDER BY c.created_at DESC
+            LIMIT $3
+          `;
+                queryParams = [userId, parseInt(siteId), parseInt(limit)];
+            } else {
+                campaignsQuery = `
+            SELECT 
+              c.id,
+              c.title,
+              c.body as message,
+              c.created_at,
+              c.status,
+              s.name as site_name
+            FROM campaigns c
+            JOIN sites s ON c.site_id = s.id
+            WHERE s.user_id = $1
+            ORDER BY c.created_at DESC
+            LIMIT $2
+          `;
+                queryParams = [userId, parseInt(limit)];
+            }
         }
 
         const result = await pool.query(campaignsQuery, queryParams);

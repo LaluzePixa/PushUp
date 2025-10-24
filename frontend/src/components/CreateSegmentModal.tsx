@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { segmentsService, sitesService, SegmentFormData, Site } from '@/services/api';
+import { segmentsService, SegmentFormData } from '@/services/api';
 import { useSiteContext } from '@/contexts/SiteContext';
 
 interface CreateSegmentModalProps {
@@ -48,8 +48,9 @@ export default function CreateSegmentModal({ isOpen, onClose, onSuccess }: Creat
       onSuccess();
       onClose();
       resetForm();
-    } catch (err: any) {
-      setError(err.message || 'Error al crear el segmento');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Error al crear el segmento';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -66,7 +67,7 @@ export default function CreateSegmentModal({ isOpen, onClose, onSuccess }: Creat
     setError(null);
   };
 
-  const handleConditionChange = (field: string, value: any) => {
+  const handleConditionChange = (field: string, value: string | number | undefined) => {
     setFormData(prev => ({
       ...prev,
       conditions: {
@@ -105,7 +106,7 @@ export default function CreateSegmentModal({ isOpen, onClose, onSuccess }: Creat
 
   const removeCondition = (type: keyof SegmentFormData['conditions']) => {
     const newConditions = { ...formData.conditions };
-    delete (newConditions as any)[type];
+    delete newConditions[type];
     setFormData(prev => ({ ...prev, conditions: newConditions }));
   };
 
@@ -196,7 +197,7 @@ export default function CreateSegmentModal({ isOpen, onClose, onSuccess }: Creat
               <div className="flex space-x-2">
                 <select
                   value={conditionType}
-                  onChange={(e) => setConditionType(e.target.value as any)}
+                  onChange={(e) => setConditionType(e.target.value as 'userAgent' | 'createdAt' | 'siteId')}
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
                 >
                   <option value="userAgent">User Agent</option>

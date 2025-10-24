@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -57,9 +58,10 @@ export function CardDemo() {
         setError(result.error || 'Error de autenticación')
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Error en login:', err)
-      setError(err.message || 'Error inesperado durante el login')
+      const errorMessage = err instanceof Error ? err.message : 'Error inesperado durante el login';
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -73,7 +75,7 @@ export function CardDemo() {
           Enter your email below to login to your account
         </CardDescription>
         <CardAction>
-          <a href="register">Sign Up</a>
+          <Link href="/register">Sign Up</Link>
         </CardAction>
       </CardHeader>
       <CardContent>

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Info } from 'lucide-react';
 import { DashboardMetric, dashboardService } from '@/services/api';
+import { useSiteContext } from '@/contexts/SiteContext';
 
 interface MetricCardProps {
   metricName: string;
@@ -13,6 +14,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ metricName, className = "" }) =
   const [metric, setMetric] = useState<DashboardMetric | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { selectedSite } = useSiteContext();
 
   useEffect(() => {
     const fetchMetric = async () => {
@@ -20,7 +22,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ metricName, className = "" }) =
         setLoading(true);
         setError(null);
 
-        const response = await dashboardService.getMetrics();
+        const response = await dashboardService.getMetrics(selectedSite?.id);
 
         if (response.success && response.data) {
           const foundMetric = response.data[metricName.toLowerCase()];
@@ -41,7 +43,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ metricName, className = "" }) =
     };
 
     fetchMetric();
-  }, [metricName]);
+  }, [metricName, selectedSite?.id]); // Dependencia agregada: selectedSite?.id
 
   // Estado de carga
   if (loading) {

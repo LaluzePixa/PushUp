@@ -1,37 +1,39 @@
 "use client"
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { dashboardService, Subscription } from '@/services/api';
+import { useSiteContext } from '@/contexts/SiteContext';
 
 // Componente para la tabla de suscriptores
 export default function RecentSubscribersTable() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { selectedSite } = useSiteContext();
+
+  const fetchSubscriptions = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await dashboardService.getSubscriptions(10, 1, selectedSite?.id);
+
+      if (response.success && response.data) {
+        setSubscriptions(response.data);
+      } else {
+        setError('Error al cargar suscripciones');
+      }
+    } catch (err) {
+      console.error('Error fetching subscriptions:', err);
+      setError('Error de conexión');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedSite?.id]); // Dependencia agregada
 
   useEffect(() => {
-    const fetchSubscriptions = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await dashboardService.getSubscriptions(10, 1);
-
-        if (response.success && response.data) {
-          setSubscriptions(response.data);
-        } else {
-          setError('Error al cargar suscripciones');
-        }
-      } catch (err) {
-        console.error('Error fetching subscriptions:', err);
-        setError('Error de conexión');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchSubscriptions();
-  }, []);
+  }, [fetchSubscriptions]);
 
   // Función para formatear fecha
   const formatDate = (dateString: string) => {
@@ -125,10 +127,10 @@ export default function RecentSubscribersTable() {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${subscription.device === 'Mobile'
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                        : subscription.device === 'Tablet'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                      : subscription.device === 'Tablet'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                       }`}>
                       {subscription.device}
                     </span>

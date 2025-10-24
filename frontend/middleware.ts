@@ -1,4 +1,4 @@
-// middleware.ts - Protección de rutas autenticadas
+// middleware.ts - Protección de rutas autenticadas con sesiones seguras
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -19,16 +19,30 @@ export function middleware(request: NextRequest) {
   // Si es una ruta privada, verificar autenticación
   console.log('🔒 Verificando autenticación...')
 
-  // Buscar la cookie de autenticación
-  const authToken = request.cookies.get('auth-token')?.value
+  // Buscar la cookie de sesión HTTP-only
+  const sessionCookie = request.cookies.get('session')?.value
 
-  console.log('🍪 Token presente:', !!authToken)
+  console.log('🍪 Sesión presente:', !!sessionCookie)
 
-  // Si no hay token, redirigir al login
-  if (!authToken) {
+  // Si no hay sesión, redirigir al login
+  if (!sessionCookie) {
     console.log('❌ No autenticado, redirigiendo al login')
     url.pathname = '/login'
     url.searchParams.set('redirect', request.nextUrl.pathname)
+    return NextResponse.redirect(url)
+  }
+
+  // Verificar que la sesión sea válida (básica verificación)
+  try {
+    const session = JSON.parse(sessionCookie)
+    if (!session.user || new Date() > new Date(session.expiresAt)) {
+      console.log('❌ Sesión expirada, redirigiendo al login')
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+  } catch (error) {
+    console.log('❌ Sesión inválida, redirigiendo al login')
+    url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 

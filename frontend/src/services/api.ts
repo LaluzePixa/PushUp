@@ -5,7 +5,22 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-export interface ApiResponse<T = any> {
+export interface ApiError extends Error {
+    status?: number;
+    code?: string;
+    details?: unknown;
+}
+
+export interface PaginationData {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+}
+
+export interface ApiResponse<T = unknown> {
     success?: boolean;
     message?: string;
     token?: string;
@@ -145,9 +160,9 @@ class ApiClient {
                 const errorCode = data.code || 'UNKNOWN_ERROR';
 
                 const error = new Error(errorMessage);
-                (error as any).status = response.status;
-                (error as any).code = errorCode;
-                (error as any).details = data.details || null;
+                (error as ApiError).status = response.status;
+                (error as ApiError).code = errorCode;
+                (error as ApiError).details = data.details || null;
 
                 throw error;
             }
@@ -163,14 +178,14 @@ class ApiClient {
         return this.request<T>(endpoint, { method: 'GET' });
     }
 
-    async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    async post<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
         return this.request<T>(endpoint, {
             method: 'POST',
             body: data ? JSON.stringify(data) : undefined,
         });
     }
 
-    async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    async put<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
         return this.request<T>(endpoint, {
             method: 'PUT',
             body: data ? JSON.stringify(data) : undefined,
@@ -207,9 +222,9 @@ class ApiClient {
                 const errorCode = data.code || 'UNKNOWN_ERROR';
 
                 const error = new Error(errorMessage);
-                (error as any).status = response.status;
-                (error as any).code = errorCode;
-                (error as any).details = data.details || null;
+                (error as ApiError).status = response.status;
+                (error as ApiError).code = errorCode;
+                (error as ApiError).details = data.details || null;
 
                 console.error(`[publicGet] Error response:`, error);
                 throw error;
@@ -292,7 +307,7 @@ export const sitesService = {
         limit?: number;
         search?: string;
         isActive?: boolean;
-    }): Promise<ApiResponse<{ sites: Site[]; pagination: any }>> {
+    }): Promise<ApiResponse<{ sites: Site[]; pagination: PaginationData }>> {
         const searchParams = new URLSearchParams();
 
         if (params?.page) searchParams.append('page', params.page.toString());
@@ -388,7 +403,7 @@ export const usersService = {
         role?: string;
         search?: string;
         isActive?: boolean;
-    }): Promise<ApiResponse<{ users: User[]; pagination: any }>> {
+    }): Promise<ApiResponse<{ users: User[]; pagination: PaginationData }>> {
         const searchParams = new URLSearchParams();
 
         if (params?.page) searchParams.append('page', params.page.toString());
@@ -473,6 +488,38 @@ export interface UserSegment {
 }
 
 /**
+ * Interface para condiciones de segmento
+ */
+export interface SegmentConditions {
+    userAgent?: {
+        contains?: string;
+        notContains?: string;
+    };
+    createdAt?: {
+        after?: string;
+        before?: string;
+    };
+    siteId?: {
+        equals?: number;
+        in?: number[];
+    };
+    [key: string]: unknown;
+}
+
+/**
+ * Interface para suscriptores
+ */
+export interface Subscriber {
+    id: number;
+    endpoint: string;
+    userAgent?: string;
+    ipAddress?: string;
+    siteId: number;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+/**
  * Interface completa para segmentos
  */
 export interface Segment {
@@ -480,7 +527,7 @@ export interface Segment {
     name: string;
     description?: string;
     siteId?: number;
-    conditions: Record<string, any>;
+    conditions: SegmentConditions;
     createdAt: string;
     updatedAt?: string;
 }
@@ -492,20 +539,7 @@ export interface SegmentFormData {
     name: string;
     description?: string;
     siteId?: number;
-    conditions: {
-        userAgent?: {
-            contains?: string;
-            notContains?: string;
-        };
-        createdAt?: {
-            after?: string;
-            before?: string;
-        };
-        siteId?: {
-            equals?: number;
-            in?: number[];
-        };
-    };
+    conditions: SegmentConditions;
 }
 
 /**
@@ -573,22 +607,30 @@ export const dashboardService = {
     /**
      * Obtener métricas del dashboard
      */
-    async getMetrics(): Promise<ApiResponse<DashboardMetrics>> {
-        return apiClient.get('/dashboard/metrics');
+    async getMetrics(siteId?: number): Promise<ApiResponse<DashboardMetrics>> {
+        const params = siteId ? `?siteId=${siteId}` : '';
+        return apiClient.get(`/dashboard/metrics${params}`);
     },
 
     /**
      * Obtener datos analíticos para gráficos
      */
-    async getAnalytics(period: number = 30): Promise<ApiResponse<AnalyticsDataPoint[]>> {
-        return apiClient.get(`/dashboard/analytics?period=${period}`);
+    async getAnalytics(period: number = 30, siteId?: number): Promise<ApiResponse<AnalyticsDataPoint[]>> {
+        const params = new URLSearchParams();
+        params.append('period', period.toString());
+        if (siteId) params.append('siteId', siteId.toString());
+        return apiClient.get(`/dashboard/analytics?${params.toString()}`);
     },
 
     /**
      * Obtener suscripciones recientes
      */
-    async getSubscriptions(limit: number = 10, page: number = 1): Promise<ApiResponse<Subscription[]>> {
-        return apiClient.get(`/dashboard/subscriptions?limit=${limit}&page=${page}`);
+    async getSubscriptions(limit: number = 10, page: number = 1, siteId?: number): Promise<ApiResponse<Subscription[]>> {
+        const params = new URLSearchParams();
+        params.append('limit', limit.toString());
+        params.append('page', page.toString());
+        if (siteId) params.append('siteId', siteId.toString());
+        return apiClient.get(`/dashboard/subscriptions?${params.toString()}`);
     },
 
     /**
@@ -605,8 +647,8 @@ export const dashboardService = {
         name: string;
         description?: string;
         siteId?: number;
-        conditions: Record<string, any>;
-    }): Promise<ApiResponse<any>> {
+        conditions: SegmentConditions;
+    }): Promise<ApiResponse<Segment>> {
         return apiClient.post('/segments', segmentData);
     },
 
@@ -616,22 +658,22 @@ export const dashboardService = {
     async updateSegment(segmentId: number, segmentData: {
         name?: string;
         description?: string;
-        conditions?: Record<string, any>;
-    }): Promise<ApiResponse<any>> {
+        conditions?: SegmentConditions;
+    }): Promise<ApiResponse<Segment>> {
         return apiClient.put(`/segments/${segmentId}`, segmentData);
     },
 
     /**
      * Eliminar un segmento
      */
-    async deleteSegment(segmentId: number): Promise<ApiResponse<any>> {
+    async deleteSegment(segmentId: number): Promise<ApiResponse<void>> {
         return apiClient.delete(`/segments/${segmentId}`);
     },
 
     /**
      * Obtener detalles de un segmento específico
      */
-    async getSegmentById(segmentId: number): Promise<ApiResponse<any>> {
+    async getSegmentById(segmentId: number): Promise<ApiResponse<Segment>> {
         return apiClient.get(`/segments/${segmentId}`);
     },
 
@@ -644,7 +686,7 @@ export const dashboardService = {
         siteId?: number;
         search?: string;
     }): Promise<ApiResponse<{
-        segments: any[];
+        segments: Segment[];
         pagination: {
             page: number;
             limit: number;
@@ -670,8 +712,11 @@ export const dashboardService = {
     /**
      * Obtener campañas recientes para preview
      */
-    async getRecentCampaigns(limit: number = 5): Promise<ApiResponse<RecentCampaign[]>> {
-        return apiClient.get(`/dashboard/recent-campaigns?limit=${limit}`);
+    async getRecentCampaigns(limit: number = 5, siteId?: number): Promise<ApiResponse<RecentCampaign[]>> {
+        const params = new URLSearchParams();
+        params.append('limit', limit.toString());
+        if (siteId) params.append('siteId', siteId.toString());
+        return apiClient.get(`/dashboard/recent-campaigns?${params.toString()}`);
     },
 
     /**
@@ -745,6 +790,7 @@ export const campaignsService = {
         limit?: number;
         status?: string;
         search?: string;
+        siteId?: number;
     }): Promise<ApiResponse<{
         campaigns: Campaign[];
         pagination: {
@@ -760,6 +806,7 @@ export const campaignsService = {
         if (options?.limit) params.append('limit', options.limit.toString());
         if (options?.status) params.append('status', options.status);
         if (options?.search) params.append('search', options.search);
+        if (options?.siteId) params.append('siteId', options.siteId.toString());
 
         const queryString = params.toString();
         const url = queryString ? `/campaigns?${queryString}` : '/campaigns';
@@ -850,7 +897,7 @@ export const segmentsService = {
         search?: string;
     }): Promise<ApiResponse<{
         segments: Segment[];
-        pagination: any;
+        pagination: PaginationData;
     }>> {
         const params = new URLSearchParams();
 
@@ -900,8 +947,8 @@ export const segmentsService = {
         page?: number;
         limit?: number;
     }): Promise<ApiResponse<{
-        subscribers: any[];
-        pagination: any;
+        subscribers: Subscriber[];
+        pagination: PaginationData;
     }>> {
         const params = new URLSearchParams();
 

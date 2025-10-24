@@ -19,7 +19,7 @@ interface UseApiDataOptions {
   /**
    * Callback on success
    */
-  onSuccess?: (data: any) => void
+  onSuccess?: (data: unknown) => void
 
   /**
    * Callback on error
@@ -117,11 +117,11 @@ export function useApiData<T>(
         if (debug) console.error('[useApiData] Error:', errorMsg)
         onError?.(new Error(errorMsg))
       }
-    } catch (err: any) {
-      const errorMsg = err.message || 'Error de conexión'
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Error de conexión'
       setError(errorMsg)
       if (debug) console.error('[useApiData] Exception:', err)
-      onError?.(err)
+      onError?.(err instanceof Error ? err : new Error(String(err)))
     } finally {
       setLoading(false)
     }
@@ -131,7 +131,8 @@ export function useApiData<T>(
     if (autoFetch) {
       fetchData()
     }
-  }, [...dependencies, autoFetch])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchData, autoFetch, ...dependencies])
 
   const clearError = useCallback(() => {
     setError(null)
@@ -174,7 +175,7 @@ export function useApiData<T>(
  * ```
  */
 export function usePaginatedApiData<T>(
-  fetcher: (page: number, limit: number) => Promise<ApiResponse<any>>,
+  fetcher: (page: number, limit: number) => Promise<ApiResponse<T & { pagination?: { totalPages?: number } }>>,
   itemsPerPage: number = 10
 ) {
   const [page, setPage] = useState(1)
@@ -187,7 +188,7 @@ export function usePaginatedApiData<T>(
 
   // Update total pages when data changes
   useEffect(() => {
-    if (data && 'pagination' in data) {
+    if (data && typeof data === 'object' && 'pagination' in data && data.pagination) {
       setTotalPages(data.pagination.totalPages || 1)
     }
   }, [data])
