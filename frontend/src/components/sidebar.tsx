@@ -98,20 +98,22 @@ const mainMenuData = [
       {
         title: "Geo Report",
         url: "/dashboard/geo-report",
-      },
-      {
-        title: "Geek Me Out",
-        url: "/dashboard/analytics",
-        badgeColor: "bg-orange-200 text-orange-700"
-      },
+      }
+      // ⚠️ ITEM TEMPORALMENTE OCULTO - Necesita más trabajo
+      // {
+      //   title: "Geek Me Out",
+      //   url: "/dashboard/analytics",
+      //   badgeColor: "bg-orange-200 text-orange-700"
+      // },
     ],
   },
-  {
-    title: "Optin Funnel",
-    url: "/optin-funnel",
-    icon: Puzzle,
-    badgeColor: "bg-yellow-200 text-yellow-700"
-  },
+  // ⚠️ ITEM TEMPORALMENTE OCULTO - Solo placeholder "Incomming..."
+  // {
+  //   title: "Optin Funnel",
+  //   url: "/optin-funnel",
+  //   icon: Puzzle,
+  //   badgeColor: "bg-yellow-200 text-yellow-700"
+  // },
   {
     title: "Users",
     url: "/users",
@@ -139,19 +141,21 @@ const mainMenuData = [
       title: "Manual Push",
       url: "/campaigns",
       active: true,
-    }, {
-      title: "Push via API",
-      url: "/campaigns/api",
-      active: true,
-    }, {
-      title: "Push via WP Plugin",
-      url: "/campaigns/wordpress",
-      active: true,
-    }, {
-      title: "Journey Builder",
-      url: "/journeys",
-      active: true,
     }
+    // ⚠️ ITEMS TEMPORALMENTE OCULTOS - Comentados 2025-10-24
+    // {
+    //   title: "Push via API",
+    //   url: "/campaigns/api",
+    //   active: true,
+    // }, {
+    //   title: "Push via WP Plugin",
+    //   url: "/campaigns/wordpress",
+    //   active: true,
+    // }, {
+    //   title: "Journey Builder",
+    //   url: "/journeys",
+    //   active: true,
+    // }
     ]
   },
   {
@@ -160,6 +164,10 @@ const mainMenuData = [
     icon: Settings,
     isCollapsible: true,
     items: [{
+      title: "Sites",
+      url: "/sites",
+      active: true,
+    }, {
       title: "Opt-In Prompt",
       url: "/optinp",
       active: true,
@@ -177,24 +185,25 @@ const mainMenuData = [
       active: true,
     }]
   },
-  {
-    title: "Logs",
-    url: "/logs",
-    icon: FileText,
-    isCollapsible: true,
-    items: [
-      {
-        title: "Subscribers",
-        url: "/active-users",
-        active: true,
-      },
-      {
-        title: "Custom Attributes",
-        url: "/attributes",
-        active: true,
-      },
-    ]
-  },
+  // ⚠️ SECTION TEMPORALMENTE OCULTA - Ambas páginas broken/incomplete
+  // {
+  //   title: "Logs",
+  //   url: "/logs",
+  //   icon: FileText,
+  //   isCollapsible: true,
+  //   items: [
+  //     {
+  //       title: "Subscribers",
+  //       url: "/active-users",
+  //       active: true,
+  //     },
+  //     {
+  //       title: "Custom Attributes",
+  //       url: "/attributes",
+  //       active: true,
+  //     },
+  //   ]
+  // },
   {
     title: "Integration",
     url: "/integration",
@@ -205,45 +214,47 @@ const mainMenuData = [
         title: "Manual Integration",
         url: "/manual-integ",
         active: true,
-      },
-      {
-        title: "Wordpress Plugin",
-        url: "/wp-plugin",
-        active: true,
-      },
-      {
-        title: "REST API keys",
-        url: "/public-api-keys",
-        active: true,
-      },
-      {
-        title: "Public key for AMP",
-        url: "/public-amp-keys",
-        active: true,
-      },
+      }
+      // ⚠️ ITEMS TEMPORALMENTE OCULTOS - Comentados 2025-10-24
+      // {
+      //   title: "Wordpress Plugin",
+      //   url: "/wp-plugin",
+      //   active: true,
+      // },
+      // {
+      //   title: "REST API keys",
+      //   url: "/public-api-keys",
+      //   active: true,
+      // },
+      // {
+      //   title: "Public key for AMP",
+      //   url: "/public-amp-keys",
+      //   active: true,
+      // },
     ]
   },
 ]
 
 const secondaryMenuData = [
-  {
-    title: "Collect Email/Phone",
-    url: "/collect",
-    icon: Mail,
-    isCollapsible: true,
-    items: [
-      {
-        title: "Configure Prompt",
-        url: "/email-options",
-        active: true,
-      },
-      {
-        title: "Users",
-        url: "/email-users",
-        active: true,
-      },
-    ]
-  },
+  // ⚠️ SECTION TEMPORALMENTE OCULTA - Páginas incompletas (no save, no data)
+  // {
+  //   title: "Collect Email/Phone",
+  //   url: "/collect",
+  //   icon: Mail,
+  //   isCollapsible: true,
+  //   items: [
+  //     {
+  //       title: "Configure Prompt",
+  //       url: "/email-options",
+  //       active: true,
+  //     },
+  //     {
+  //       title: "Users",
+  //       url: "/email-users",
+  //       active: true,
+  //     },
+  //   ]
+  // },
   {
     title: "Trust & Privacy",
     url: "/data-and-privacy",
@@ -818,11 +829,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Crear los datos del menú de soporte con el onClick para Contact Us
   const supportMenuData = [
-    {
-      title: "Troubleshooter",
-      url: "/troubleshooter",
-      icon: Wrench,
-    },
+    // ⚠️ ITEM TEMPORALMENTE OCULTO - Solo placeholder "Incoming..."
+    // {
+    //   title: "Troubleshooter",
+    //   url: "/troubleshooter",
+    //   icon: Wrench,
+    // },
     {
       title: "Contact Us",
       icon: Mail,
