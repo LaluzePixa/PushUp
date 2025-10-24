@@ -72,11 +72,11 @@ export default function SubscriptionPage() {
     ];
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <h1 className="text-xl font-semibold text-gray-800">Settings</h1>
+          <h1 className="text-xl font-semibold text-gray-800 dark:text-white">Settings</h1>
           <span className="px-2 py-1 bg-green-500 text-white text-xs rounded font-medium">
             Active
           </span>
@@ -88,15 +88,15 @@ export default function SubscriptionPage() {
         <div className="flex-1 max-w-md">
           {/* Styling Options */}
           <div className="mb-8">
-            <h2 className="text-sm font-medium text-gray-600 mb-4">Styling options</h2>
+            <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-4">Styling options</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Style:</label>
+                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Style:</label>
                 <select
                   value={style}
                   onChange={(e) => setStyle(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 >
                   <option>Rounded</option>
                   <option>Square</option>
@@ -105,11 +105,11 @@ export default function SubscriptionPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Position:</label>
+                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Position:</label>
                 <select
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 >
                   <option>Bottom Left</option>
                   <option>Bottom Right</option>
@@ -119,12 +119,12 @@ export default function SubscriptionPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Theme:</label>
+                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Theme:</label>
                 <div className="flex gap-2">
                   <select
                     value={theme}
                     onChange={(e) => setTheme(e.target.value)}
-                    className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   >
                     <option>Dark</option>
                     <option>Light</option>
@@ -134,17 +134,17 @@ export default function SubscriptionPage() {
                     type="color"
                     value={themeColor}
                     onChange={(e) => setThemeColor(e.target.value)}
-                    className="w-10 h-10 border border-gray-300 rounded cursor-pointer"
+                    className="w-10 h-10 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Pop-up Style:</label>
+                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Pop-up Style:</label>
                 <select
                   value={popupStyle}
                   onChange={(e) => setPopupStyle(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 >
                   <option>Standard</option>
                   <option>Minimal</option>
@@ -153,24 +153,24 @@ export default function SubscriptionPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Offset (px):</label>
+                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Offset (px):</label>
                 <div className="flex gap-2">
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">x-axis</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">x-axis</span>
                     <input
                       type="number"
                       value={xAxis}
                       onChange={(e) => setXAxis(e.target.value)}
-                      className="w-16 p-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-16 p-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     />
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500">y-axis</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">y-axis</span>
                     <input
                       type="number"
                       value={yAxis}
                       onChange={(e) => setYAxis(e.target.value)}
-                      className="w-16 p-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-16 p-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -180,29 +180,29 @@ export default function SubscriptionPage() {
 
           {/* Action Button Configuration */}
           <div className="mb-8">
-            <h2 className="text-sm font-medium text-gray-600 mb-4">Action button configuration</h2>
+            <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-4">Action button configuration</h2>
 
             <div className="space-y-6">
               {/* Default */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Default</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Default</h3>
                 <div className="space-y-2">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Title:</label>
+                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Title:</label>
                     <textarea
                       value={defaultTitle}
                       onChange={(e) => setDefaultTitle(e.target.value)}
                       rows={2}
-                      className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Button text:</label>
+                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Button text:</label>
                     <input
                       type="text"
                       value={defaultButtonText}
                       onChange={(e) => setDefaultButtonText(e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -210,24 +210,24 @@ export default function SubscriptionPage() {
 
               {/* When user is subscribed to Push */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">When user is subscribed to Push</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When user is subscribed to Push</h3>
                 <div className="space-y-2">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Title:</label>
+                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Title:</label>
                     <textarea
                       value={subscribedTitle}
                       onChange={(e) => setSubscribedTitle(e.target.value)}
                       rows={2}
-                      className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Button text:</label>
+                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Button text:</label>
                     <input
                       type="text"
                       value={subscribedButtonText}
                       onChange={(e) => setSubscribedButtonText(e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -235,24 +235,24 @@ export default function SubscriptionPage() {
 
               {/* When user has unsubscribed to Push */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">When user has unsubscribed to Push</h3>
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When user has unsubscribed to Push</h3>
                 <div className="space-y-2">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Title:</label>
+                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Title:</label>
                     <textarea
                       value={unsubscribedTitle}
                       onChange={(e) => setUnsubscribedTitle(e.target.value)}
                       rows={2}
-                      className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Button Text:</label>
+                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Button Text:</label>
                     <input
                       type="text"
                       value={unsubscribedButtonText}
                       onChange={(e) => setUnsubscribedButtonText(e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -263,7 +263,7 @@ export default function SubscriptionPage() {
           {/* Show last 3 notifications */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
-              <label className="text-sm text-gray-700">Show last 3 notifications:</label>
+              <label className="text-sm text-gray-700 dark:text-gray-300">Show last 3 notifications:</label>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -271,7 +271,7 @@ export default function SubscriptionPage() {
                   onChange={(e) => setShowLastNotifications(e.target.checked)}
                   className="sr-only"
                 />
-                <div className={`w-10 h-6 rounded-full transition-colors ${showLastNotifications ? 'bg-blue-500' : 'bg-gray-300'
+                <div className={`w-10 h-6 rounded-full transition-colors ${showLastNotifications ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
                   }`}>
                   <div className={`w-4 h-4 bg-white rounded-full shadow transform transition-transform mt-1 ${showLastNotifications ? 'translate-x-5' : 'translate-x-1'
                     }`}></div>
@@ -282,25 +282,25 @@ export default function SubscriptionPage() {
 
           {/* Heading */}
           <div className="mb-8">
-            <h2 className="text-sm font-medium text-gray-600 mb-4">Heading</h2>
+            <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-4">Heading</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs text-gray-600 mb-1">Default:</label>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Default:</label>
                 <textarea
                   value={defaultHeading}
                   onChange={(e) => setDefaultHeading(e.target.value)}
                   rows={2}
-                  className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-600 mb-1">When user is subscribed to push:</label>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">When user is subscribed to push:</label>
                 <textarea
                   value={subscribedHeading}
                   onChange={(e) => setSubscribedHeading(e.target.value)}
                   rows={2}
-                  className="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
               </div>
             </div>
@@ -320,19 +320,19 @@ export default function SubscriptionPage() {
         {/* Right Panel - Preview */}
         <div className="flex-1 max-w-lg">
           <div className="mb-4">
-            <h2 className="text-sm font-medium text-gray-600">Preview</h2>
+            <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300">Preview</h2>
           </div>
 
           {/* Preview Tabs */}
           <div className="mb-4">
-            <div className="flex gap-1 bg-gray-100 p-1 rounded">
+            <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded">
               {["Default", "When Subscribed", "When Unsubscribed"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setPreviewTab(tab)}
                   className={`px-3 py-1 text-xs rounded transition-colors ${previewTab === tab
                     ? 'bg-blue-500 text-white'
-                    : 'text-gray-600 hover:bg-white'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
                     }`}
                 >
                   {tab}
@@ -342,7 +342,7 @@ export default function SubscriptionPage() {
           </div>
 
           {/* Preview Content */}
-          <div className="bg-gray-200 p-6 rounded-lg h-96 relative overflow-hidden">
+          <div className="bg-gray-200 dark:bg-gray-800 p-6 rounded-lg h-96 relative overflow-hidden">
             {/* Bell Icon */}
             <div className="absolute bottom-4 right-4">
               <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-blue-600 transition-colors">
@@ -356,35 +356,35 @@ export default function SubscriptionPage() {
             </button>
 
             {/* Main Content */}
-            <div className="bg-white rounded-lg p-4 max-w-sm mx-auto mt-8">
+            <div className="bg-white dark:bg-gray-700 rounded-lg p-4 max-w-sm mx-auto mt-8">
               {showLastNotifications && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium mb-3">
+                  <h3 className="text-sm font-medium mb-3 text-gray-900 dark:text-white">
                     {previewTab === "When Subscribed" ? subscribedHeading : defaultHeading}
                   </h3>
                   <div className="space-y-2">
                     {isLoading ? (
-                      <div className="border border-gray-200 rounded p-2 bg-gray-50">
-                        <div className="text-gray-500 text-sm">
+                      <div className="border border-gray-200 dark:border-gray-600 rounded p-2 bg-gray-50 dark:bg-gray-800">
+                        <div className="text-gray-500 dark:text-gray-400 text-sm">
                           Cargando notificaciones...
                         </div>
                       </div>
                     ) : error ? (
-                      <div className="border border-red-200 rounded p-2 bg-red-50">
-                        <div className="text-red-600 text-sm font-medium">
+                      <div className="border border-red-200 dark:border-red-800 rounded p-2 bg-red-50 dark:bg-red-900/20">
+                        <div className="text-red-600 dark:text-red-400 text-sm font-medium">
                           Error al cargar notificaciones
                         </div>
-                        <div className="text-xs text-red-500">
+                        <div className="text-xs text-red-500 dark:text-red-400">
                           {error}
                         </div>
                       </div>
                     ) : (
                       displayNotifications.map((notification, index) => (
-                        <div key={index} className="border border-blue-200 rounded p-2 bg-blue-50">
-                          <div className="text-blue-600 text-sm font-medium">
+                        <div key={index} className="border border-blue-200 dark:border-blue-800 rounded p-2 bg-blue-50 dark:bg-blue-900/20">
+                          <div className="text-blue-600 dark:text-blue-400 text-sm font-medium">
                             {notification.title}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
                             {notification.time}
                           </div>
                         </div>
@@ -395,7 +395,7 @@ export default function SubscriptionPage() {
               )}
 
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                   {previewTab === "Default" && defaultTitle}
                   {previewTab === "When Subscribed" && subscribedTitle}
                   {previewTab === "When Unsubscribed" && unsubscribedTitle}

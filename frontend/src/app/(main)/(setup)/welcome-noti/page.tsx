@@ -38,11 +38,11 @@ export default function WelcomeNotificationPage() {
   );
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-semibold text-gray-800">Welcome Notification</h1>
+          <h1 className="text-xl font-semibold text-gray-800 dark:text-white">Welcome Notification</h1>
           <span className="px-2 py-1 bg-green-500 text-white text-xs rounded font-medium">
             Active
           </span>
@@ -56,14 +56,14 @@ export default function WelcomeNotificationPage() {
             {/* Title */}
             <div>
               <div className="flex items-center mb-2">
-                <label className="text-gray-700 font-medium">Title</label>
+                <label className="text-gray-700 dark:text-gray-300 font-medium">Title</label>
                 <InfoIcon />
               </div>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
 
@@ -71,20 +71,20 @@ export default function WelcomeNotificationPage() {
             <div className="flex gap-4">
               <div className="flex-1">
                 <div className="flex items-center mb-2">
-                  <label className="text-gray-700 font-medium">Icon</label>
+                  <label className="text-gray-700 dark:text-gray-300 font-medium">Icon</label>
                   <InfoIcon />
                 </div>
-                <button className="w-full p-3 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800">
                   Upload
                 </button>
               </div>
 
               <div className="flex-1">
                 <div className="flex items-center mb-2">
-                  <label className="text-gray-700 font-medium">Image</label>
+                  <label className="text-gray-700 dark:text-gray-300 font-medium">Image</label>
                   <InfoIcon />
                 </div>
-                <button className="w-full p-3 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800">
                   Upload
                 </button>
               </div>
@@ -93,25 +93,25 @@ export default function WelcomeNotificationPage() {
             {/* Body */}
             <div>
               <div className="flex items-center mb-2">
-                <label className="text-gray-700 font-medium">Body</label>
+                <label className="text-gray-700 dark:text-gray-300 font-medium">Body</label>
                 <InfoIcon />
               </div>
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 rows={3}
-                className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
 
             {/* Destination/URL */}
             <div>
-              <label className="block text-gray-700 font-medium mb-2">Destination/URL</label>
+              <label className="block text-gray-700 dark:text-gray-300 font-medium mb-2">Destination/URL</label>
               <input
                 type="url"
                 value={destinationUrl}
                 onChange={(e) => setDestinationUrl(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
 
@@ -165,24 +165,24 @@ export default function WelcomeNotificationPage() {
               </div>
 
               {/* Notification */}
-              <div className="absolute bottom-12 right-4 bg-white rounded shadow-lg p-4 max-w-xs border">
+              <div className="absolute bottom-12 right-4 bg-white dark:bg-gray-700 rounded shadow-lg p-4 max-w-xs border border-gray-200 dark:border-gray-600">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-xs">
+                  <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center text-xs">
                     🌐
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-semibold text-gray-800 text-sm">
+                      <h3 className="font-semibold text-gray-800 dark:text-white text-sm">
                         {title}
                       </h3>
-                      <button className="text-gray-400 hover:text-gray-600 text-lg leading-none">
+                      <button className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-lg leading-none">
                         ×
                       </button>
                     </div>
-                    <p className="text-gray-600 text-sm mb-2">
+                    <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">
                       {body}
                     </p>
-                    <p className="text-gray-500 text-xs">
+                    <p className="text-gray-500 dark:text-gray-400 text-xs">
                       now • {destinationUrl.replace('http://', '').replace('https://', '')}
                     </p>
                   </div>
@@ -208,15 +208,15 @@ export default function WelcomeNotificationPage() {
 
           {/* Mac Preview Placeholder */}
           {selectedOs === "Mac" && (
-            <div className="bg-gray-200 rounded-lg h-96 flex items-center justify-center">
-              <p className="text-gray-500">Mac notification preview</p>
+            <div className="bg-gray-200 dark:bg-gray-800 rounded-lg h-96 flex items-center justify-center">
+              <p className="text-gray-500 dark:text-gray-400">Mac notification preview</p>
             </div>
           )}
 
           {/* Android Preview Placeholder */}
           {selectedOs === "Android" && (
-            <div className="bg-gray-200 rounded-lg h-96 flex items-center justify-center">
-              <p className="text-gray-500">Android notification preview</p>
+            <div className="bg-gray-200 dark:bg-gray-800 rounded-lg h-96 flex items-center justify-center">
+              <p className="text-gray-500 dark:text-gray-400">Android notification preview</p>
             </div>
           )}
         </div>

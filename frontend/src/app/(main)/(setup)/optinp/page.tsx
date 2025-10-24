@@ -188,13 +188,13 @@ export default function Optinp() {
   ];
 
   return (
-    <div className="flex gap-8 p-6">
+    <div className="flex gap-8 p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Formulario a la izquierda */}
       <div className="flex-1 max-w-md">
         {/* Estado de las notificaciones */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Estado de Notificaciones Push</h3>
-          <p className="text-sm text-gray-600">{getNotificationStatus()}</p>
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Estado de Notificaciones Push</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{getNotificationStatus()}</p>
           {error && (
             <p className="text-sm text-red-600 mt-1">Error: {error}</p>
           )}
@@ -222,13 +222,13 @@ export default function Optinp() {
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             When to Show:
           </label>
           <select
             value={whenToShow}
             onChange={(e) => setWhenToShow(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option>Show Immediately</option>
             <option>After 5 seconds</option>
@@ -237,7 +237,7 @@ export default function Optinp() {
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-4">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
             Select Custom-prompt Type:
           </label>
           <div className="grid grid-cols-3 gap-3 mb-4">
@@ -252,8 +252,8 @@ export default function Optinp() {
                   className="sr-only"
                 />
                 <div className={`p-3 rounded-lg border-2 text-center transition-colors ${selectedType === type.id
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
                   }`}>
                   <div className="flex justify-center mb-2">
                     {type.icon}
@@ -265,7 +265,7 @@ export default function Optinp() {
                       onChange={() => { }}
                       className="w-4 h-4 text-blue-600 mr-2"
                     />
-                    <span className="text-xs text-gray-600">{type.name}</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">{type.name}</span>
                   </div>
                 </div>
               </label>
@@ -275,13 +275,13 @@ export default function Optinp() {
 
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 w-24">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
               Animation:
             </label>
             <select
               value={animation}
               onChange={(e) => setAnimation(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option>Drop-in</option>
               <option>Fade-in</option>
@@ -290,26 +290,26 @@ export default function Optinp() {
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 w-24">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
               Background Color:
             </label>
             <input
               type="color"
               value={backgroundColor}
               onChange={(e) => setBackgroundColor(e.target.value)}
-              className="w-8 h-8 border border-gray-300 rounded cursor-pointer"
+              className="w-8 h-8 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 w-24">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
               Headline:
             </label>
             <input
               type="text"
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
             <input
               type="checkbox"
@@ -320,14 +320,14 @@ export default function Optinp() {
           </div>
 
           <div className="flex items-start gap-4">
-            <label className="text-sm font-medium text-gray-700 w-24 pt-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24 pt-2">
               Text:
             </label>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={3}
-              className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
             <input
               type="checkbox"
@@ -338,73 +338,73 @@ export default function Optinp() {
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 w-24">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
               Icon:
             </label>
-            <button className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800">
               Upload
             </button>
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 w-24">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
               Cancel Button:
             </label>
             <input
               type="text"
               value={cancelButton}
               onChange={(e) => setCancelButton(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
             <input
               type="color"
               value={cancelBgColor}
               onChange={(e) => setCancelBgColor(e.target.value)}
-              className="w-6 h-6 border border-gray-300 rounded cursor-pointer"
+              className="w-6 h-6 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
             />
             <input
               type="color"
               value={cancelTextColor}
               onChange={(e) => setCancelTextColor(e.target.value)}
-              className="w-6 h-6 border border-gray-300 rounded cursor-pointer"
+              className="w-6 h-6 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 w-24">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
               Approve Button:
             </label>
             <input
               type="text"
               value={approveButton}
               onChange={(e) => setApproveButton(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
             <input
               type="color"
               value={approveBgColor}
               onChange={(e) => setApproveBgColor(e.target.value)}
-              className="w-6 h-6 border border-gray-300 rounded cursor-pointer"
+              className="w-6 h-6 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
             />
             <input
               type="color"
               value={approveTextColor}
               onChange={(e) => setApproveTextColor(e.target.value)}
-              className="w-6 h-6 border border-gray-300 rounded cursor-pointer"
+              className="w-6 h-6 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 w-24">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
               Re-prompt Delay:
             </label>
             <input
               type="number"
               value={rePromptDelay}
               onChange={(e) => setRePromptDelay(e.target.value)}
-              className="w-20 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-20 p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
-            <span className="text-sm text-gray-600">day(s)</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">day(s)</span>
           </div>
         </div>
       </div>
@@ -412,12 +412,12 @@ export default function Optinp() {
       {/* Preview a la derecha */}
       <div className="flex-1 max-w-lg">
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Preview:
           </label>
         </div>
 
-        <div className="bg-gray-200 p-8 rounded-lg h-96 flex items-center justify-center">
+        <div className="bg-gray-200 dark:bg-gray-800 p-8 rounded-lg h-96 flex items-center justify-center">
           {selectedType === "lightbox1" && (
             <div
               className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full"
