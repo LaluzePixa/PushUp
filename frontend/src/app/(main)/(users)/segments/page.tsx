@@ -2,10 +2,12 @@
 import InfoCard from "@/components/InfoCard";
 import CreateSegmentModal from "@/components/CreateSegmentModal";
 import { useState, useEffect, useCallback } from "react";
-import { segmentsService, Segment, tokenUtils } from "@/services/api";
+import { segmentsService, Segment } from "@/services/api";
 import { useSiteContext } from "@/contexts/SiteContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SegmentsPage() {
+    const { user, loading: authLoading } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
     const [segments, setSegments] = useState<Segment[]>([]);
     const [loading, setLoading] = useState(true);
@@ -81,21 +83,23 @@ export default function SegmentsPage() {
 
     // Efecto para cargar segmentos al montar el componente
     useEffect(() => {
-        // Verificar autenticación
-        const token = tokenUtils.get();
-        console.log('🔑 Token encontrado:', token ? 'Sí' : 'No', token?.substring(0, 20) + '...');
+        // Wait for auth to load
+        if (authLoading) {
+            return;
+        }
 
-        if (!token) {
-            setError('No hay token de autenticación. Por favor, inicia sesión.');
+        // Verify authentication
+        if (!user) {
+            setError('No hay autenticación. Por favor, inicia sesión.');
             setLoading(false);
             return;
         }
 
-        // Solo cargar si ya hay un sitio seleccionado
+        // Only load if a site is selected
         if (selectedSite) {
             loadSegments();
         }
-    }, [loadSegments, selectedSite]);
+    }, [authLoading, user, loadSegments, selectedSite]);
 
     // Efecto para búsqueda con debounce
     useEffect(() => {

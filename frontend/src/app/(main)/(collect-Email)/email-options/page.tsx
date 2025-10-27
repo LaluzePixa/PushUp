@@ -3,6 +3,108 @@
 import { useState } from "react"
 import InfoCard from "@/components/InfoCard"
 
+// Toggle component - moved outside render
+const Toggle = ({ checked, onChange, disabled = false }: { checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean }) => (
+    <button
+        onClick={() => !disabled && onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            checked ? 'bg-blue-600' : 'bg-gray-200'
+        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        disabled={disabled}
+    >
+        <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                checked ? 'translate-x-6' : 'translate-x-1'
+            }`}
+        />
+    </button>
+)
+
+// ColorPicker component - moved outside render
+const ColorPicker = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
+    <div className="flex items-center gap-2">
+        <input
+            type="color"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+        />
+        <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="#ffffff"
+        />
+    </div>
+)
+
+// PreviewPanel component - moved outside render
+const PreviewPanel = ({
+    text,
+    collectEmail,
+    emailLabel,
+    collectPhone,
+    phoneLabel,
+    cancelButton,
+    submitButton
+}: {
+    text: string;
+    collectEmail: boolean;
+    emailLabel: string;
+    collectPhone: boolean;
+    phoneLabel: string;
+    cancelButton: string;
+    submitButton: string;
+}) => (
+    <div className="bg-gray-200 p-6 rounded-lg">
+        <h3 className="text-sm font-medium text-gray-700 mb-4">Preview:</h3>
+        <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm">
+            <h4 className="text-lg font-medium text-gray-900 mb-4">{text}</h4>
+
+            {collectEmail && (
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                        {emailLabel}
+                    </label>
+                    <input
+                        type="email"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder=""
+                    />
+                </div>
+            )}
+
+            {collectPhone && (
+                <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                        {phoneLabel}
+                    </label>
+                    <div className="flex">
+                        <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50">
+                            <span className="text-sm">🇺🇸 +1</span>
+                        </div>
+                        <input
+                            type="tel"
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder=""
+                        />
+                    </div>
+                </div>
+            )}
+
+            <div className="flex gap-2">
+                <button className="flex-1 px-4 py-2 text-blue-600 bg-transparent border border-blue-600 rounded-md hover:bg-blue-50">
+                    {cancelButton}
+                </button>
+                <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    {submitButton}
+                </button>
+            </div>
+        </div>
+    </div>
+)
+
 export default function Page() {
     const [isEnabled, setIsEnabled] = useState(false)
     const [animation, setAnimation] = useState("Slide-in")
@@ -12,13 +114,13 @@ export default function Page() {
     const [submitButton, setSubmitButton] = useState("Subscribe")
     const [rePromptDelay, setRePromptDelay] = useState("1")
     const [thankYouMessage, setThankYouMessage] = useState("Thank You...")
-    
+
     // Email settings
     const [collectEmail, setCollectEmail] = useState(true)
     const [emailLabel, setEmailLabel] = useState("Email Address")
     const [emailValidationError, setEmailValidationError] = useState("Please enter a valid e-mail address")
     const [emailRequired, setEmailRequired] = useState(true)
-    
+
     // Phone settings
     const [collectPhone, setCollectPhone] = useState(true)
     const [phoneLabel, setPhoneLabel] = useState("Phone Number")
@@ -29,89 +131,6 @@ export default function Page() {
     const handleSave = () => {
         console.log("Saving email prompt settings...")
     }
-
-    const Toggle = ({ checked, onChange, disabled = false }: { checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean }) => (
-        <button
-            onClick={() => !disabled && onChange(!checked)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                checked ? 'bg-blue-600' : 'bg-gray-200'
-            } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-            disabled={disabled}
-        >
-            <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    checked ? 'translate-x-6' : 'translate-x-1'
-                }`}
-            />
-        </button>
-    )
-
-    const ColorPicker = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
-        <div className="flex items-center gap-2">
-            <input
-                type="color"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
-            />
-            <input
-                type="text"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="#ffffff"
-            />
-        </div>
-    )
-
-    const PreviewPanel = () => (
-        <div className="bg-gray-200 p-6 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-4">Preview:</h3>
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm">
-                <h4 className="text-lg font-medium text-gray-900 mb-4">{text}</h4>
-                
-                {collectEmail && (
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                            {emailLabel}
-                        </label>
-                        <input
-                            type="email"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder=""
-                        />
-                    </div>
-                )}
-                
-                {collectPhone && (
-                    <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                            {phoneLabel}
-                        </label>
-                        <div className="flex">
-                            <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50">
-                                <span className="text-sm">🇺🇸 +1</span>
-                            </div>
-                            <input
-                                type="tel"
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder=""
-                            />
-                        </div>
-                    </div>
-                )}
-                
-                <div className="flex gap-2">
-                    <button className="flex-1 px-4 py-2 text-blue-600 bg-transparent border border-blue-600 rounded-md hover:bg-blue-50">
-                        {cancelButton}
-                    </button>
-                    <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                        {submitButton}
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
 
     return (
         <div className="max-w-6xl mx-auto p-6">
@@ -358,7 +377,15 @@ export default function Page() {
 
                         {/* Right Column - Preview */}
                         <div>
-                            <PreviewPanel />
+                            <PreviewPanel
+                                text={text}
+                                collectEmail={collectEmail}
+                                emailLabel={emailLabel}
+                                collectPhone={collectPhone}
+                                phoneLabel={phoneLabel}
+                                cancelButton={cancelButton}
+                                submitButton={submitButton}
+                            />
                         </div>
                     </div>
                 )}
