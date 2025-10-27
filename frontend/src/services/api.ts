@@ -634,79 +634,11 @@ export const dashboardService = {
     },
 
     /**
-     * Obtener segmentos de usuarios disponibles
+     * Obtener segmentos de usuarios disponibles (formato simplificado para dropdowns)
+     * Nota: Para gestión completa de segmentos, usar segmentsService
      */
     async getSegments(): Promise<ApiResponse<UserSegment[]>> {
         return apiClient.get('/dashboard/segments');
-    },
-
-    /**
-     * Crear un nuevo segmento
-     */
-    async createSegment(segmentData: {
-        name: string;
-        description?: string;
-        siteId?: number;
-        conditions: SegmentConditions;
-    }): Promise<ApiResponse<Segment>> {
-        return apiClient.post('/segments', segmentData);
-    },
-
-    /**
-     * Actualizar un segmento existente
-     */
-    async updateSegment(segmentId: number, segmentData: {
-        name?: string;
-        description?: string;
-        conditions?: SegmentConditions;
-    }): Promise<ApiResponse<Segment>> {
-        return apiClient.put(`/segments/${segmentId}`, segmentData);
-    },
-
-    /**
-     * Eliminar un segmento
-     */
-    async deleteSegment(segmentId: number): Promise<ApiResponse<void>> {
-        return apiClient.delete(`/segments/${segmentId}`);
-    },
-
-    /**
-     * Obtener detalles de un segmento específico
-     */
-    async getSegmentById(segmentId: number): Promise<ApiResponse<Segment>> {
-        return apiClient.get(`/segments/${segmentId}`);
-    },
-
-    /**
-     * Obtener todos los segmentos con paginación
-     */
-    async getAllSegments(options?: {
-        page?: number;
-        limit?: number;
-        siteId?: number;
-        search?: string;
-    }): Promise<ApiResponse<{
-        segments: Segment[];
-        pagination: {
-            page: number;
-            limit: number;
-            total: number;
-            totalPages: number;
-            hasNext: boolean;
-            hasPrev: boolean;
-        };
-    }>> {
-        const params = new URLSearchParams();
-
-        if (options?.page) params.append('page', options.page.toString());
-        if (options?.limit) params.append('limit', options.limit.toString());
-        if (options?.siteId) params.append('siteId', options.siteId.toString());
-        if (options?.search) params.append('search', options.search);
-
-        const queryString = params.toString();
-        const url = queryString ? `/segments?${queryString}` : '/segments';
-
-        return apiClient.get(url);
     },
 
     /**
