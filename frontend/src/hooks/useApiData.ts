@@ -179,19 +179,16 @@ export function usePaginatedApiData<T>(
   itemsPerPage: number = 10
 ) {
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
 
   const { data, loading, error, refetch } = useApiData(
     () => fetcher(page, itemsPerPage),
     [page, itemsPerPage]
   )
 
-  // Update total pages when data changes
-  useEffect(() => {
-    if (data && typeof data === 'object' && 'pagination' in data && data.pagination) {
-      setTotalPages(data.pagination.totalPages || 1)
-    }
-  }, [data])
+  // Derive total pages from data instead of storing in state
+  const totalPages = (data && typeof data === 'object' && 'pagination' in data && data.pagination)
+    ? (data.pagination.totalPages || 1)
+    : 1
 
   const nextPage = useCallback(() => {
     if (page < totalPages) {

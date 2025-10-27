@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react';
 import { useSiteContext } from '@/contexts/SiteContext';
 import { CleanSiteSelector } from '@/components/CleanSiteSelector';
 
@@ -10,24 +9,16 @@ interface SiteGuardProps {
 
 export const SiteGuard: React.FC<SiteGuardProps> = ({ children }) => {
     const { selectedSite, sites, loading } = useSiteContext();
-    const [shouldShowSelector, setShouldShowSelector] = useState(true);
 
-    useEffect(() => {
-        console.log('🔍 SiteGuard useEffect:', {
-            selectedSite: selectedSite?.name,
-            sitesLength: sites.length,
-            loading
-        });
+    // Derive the value instead of using state - this avoids setState in effect
+    const shouldShowSelector = !selectedSite;
 
-        // Solo ocultar selector si hay un sitio seleccionado
-        if (selectedSite) {
-            console.log('✅ Sitio seleccionado, ocultando selector');
-            setShouldShowSelector(false);
-        } else {
-            console.log('⚠️ No hay sitio seleccionado, mostrando selector');
-            setShouldShowSelector(true);
-        }
-    }, [selectedSite, sites, loading]);
+    console.log('🔍 SiteGuard render:', {
+        selectedSite: selectedSite?.name,
+        sitesLength: sites.length,
+        loading,
+        shouldShowSelector
+    });
 
     // Mostrar loading mientras se cargan los sitios
     if (loading) {
