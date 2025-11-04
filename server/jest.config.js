@@ -49,15 +49,12 @@ const config = {
     // Verbose output
     verbose: true,
 
-    // Transform configuration for ES modules
-    extensionsToTreatAsEsm: ['.js'],
-
     // Global setup and teardown
     globalSetup: '<rootDir>/tests/globalSetup.js',
     globalTeardown: '<rootDir>/tests/globalTeardown.js',
 
     // Mock patterns
-    moduleNameMapping: {},
+    moduleNameMapper: {},
 
     // Force exit after tests
     forceExit: true,

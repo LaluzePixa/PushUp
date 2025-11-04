@@ -6,12 +6,22 @@ import { useSiteContext } from '@/contexts/SiteContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Mock dependencies
-jest.mock('next/navigation');
+const mockPush = jest.fn();
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    prefetch: jest.fn(),
+  }),
+}));
+
 jest.mock('@/contexts/SiteContext');
 jest.mock('@/contexts/AuthContext');
 
-const mockPush = jest.fn();
-const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
 const mockUseSiteContext = useSiteContext as jest.MockedFunction<typeof useSiteContext>;
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
@@ -103,15 +113,7 @@ describe('Select Site Page', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    mockUseRouter.mockReturnValue({
-      push: mockPush,
-      replace: jest.fn(),
-      back: jest.fn(),
-      forward: jest.fn(),
-      refresh: jest.fn(),
-      prefetch: jest.fn(),
-    });
+    mockPush.mockClear();
 
     mockUseAuth.mockReturnValue({
       user: mockUser,

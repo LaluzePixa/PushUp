@@ -142,11 +142,12 @@ describe('ApiClient', () => {
     it('makes PUT request with data', async () => {
       const mockResponse = { success: true };
       const putData = { name: 'Updated Name' };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockResponse),
       });
+      mockLocalStorage.getItem.mockReturnValue('test-token');
 
       const result = await apiClient.put('/users/1', putData);
 
@@ -156,6 +157,7 @@ describe('ApiClient', () => {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': 'Bearer test-token',
           },
           body: JSON.stringify(putData),
         }
@@ -165,11 +167,12 @@ describe('ApiClient', () => {
 
     it('makes DELETE request', async () => {
       const mockResponse = { success: true };
-      
+
       mockFetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockResponse),
       });
+      mockLocalStorage.getItem.mockReturnValue('test-token');
 
       const result = await apiClient.delete('/users/1');
 
@@ -179,6 +182,7 @@ describe('ApiClient', () => {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': 'Bearer test-token',
           },
         }
       );
