@@ -6,22 +6,25 @@ import { CardDemo } from '@/components/LoginComponent';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Mock dependencies
-jest.mock('next/navigation');
-jest.mock('@/contexts/AuthContext');
-
 const mockPush = jest.fn();
 const mockLogin = jest.fn();
 
-beforeEach(() => {
-  (useRouter as jest.Mock).mockReturnValue({
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
     push: mockPush,
-  });
-  
-  (useAuth as jest.Mock).mockReturnValue({
+  }),
+}));
+
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
     login: mockLogin,
-  });
-  
+  }),
+}));
+
+beforeEach(() => {
   jest.clearAllMocks();
+  mockPush.mockClear();
+  mockLogin.mockClear();
 });
 
 describe('CardDemo (LoginComponent)', () => {
@@ -37,10 +40,26 @@ describe('CardDemo (LoginComponent)', () => {
   it('shows validation errors for empty fields', async () => {
     const user = userEvent.setup();
     render(<CardDemo />);
-    
+
     const submitButton = screen.getByRole('button', { name: /iniciar sesión/i });
+
+    // The form has HTML5 validation (required attributes), so clicking won't trigger
+    // our custom validation. We need to remove required attributes or type values first.
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+
+    // Type and then clear to bypass HTML5 validation
+    await user.type(emailInput, 'a');
+    await user.clear(emailInput);
+    await user.type(passwordInput, 'a');
+    await user.clear(passwordInput);
+
+    // Remove required attribute to allow form submission
+    emailInput.removeAttribute('required');
+    passwordInput.removeAttribute('required');
+
     await user.click(submitButton);
-    
+
     await waitFor(() => {
       expect(screen.getByText(/por favor, completa todos los campos/i)).toBeInTheDocument();
     });

@@ -17,11 +17,12 @@ const config = {
     testMatch: [
         '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
         '<rootDir>/src/**/*.{test,spec}.{js,jsx,ts,tsx}',
-        '<rootDir>/tests/**/*.{test,spec}.{js,jsx,ts,tsx}'
+        '<rootDir>/tests/**/*.{test,spec}.{js,jsx,ts,tsx}',
+        '<rootDir>/__tests__/**/*.{test,spec}.{js,jsx,ts,tsx}'
     ],
 
     // Module name mapping for absolute imports and aliases
-    moduleNameMapping: {
+    moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
         '^@/components/(.*)$': '<rootDir>/src/components/$1',
         '^@/services/(.*)$': '<rootDir>/src/services/$1',
