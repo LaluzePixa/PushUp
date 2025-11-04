@@ -64,7 +64,7 @@ type Item = {
 // Datos del menú
 const mainMenuData = [
     {
-        title: "Dashboard",
+        title: "Patata",
         url: "/dashboard",
         icon: Gauge,
         isCollapsible: true,
@@ -118,19 +118,21 @@ const mainMenuData = [
             title: "Manual Push",
             url: "/campaigns",
             active: true,
-        }, {
-            title: "Push via API",
-            url: "/campaigns/api",
-            active: true,
-        }, {
-            title: "Push via WP Plugin",
-            url: "/campaigns/wordpress",
-            active: true,
-        }, {
-            title: "Journey Builder",
-            url: "/journeys",
-            active: true,
         }
+            // ⚠️ ITEMS TEMPORALMENTE OCULTOS - Comentados 2025-10-27
+            // {
+            //     title: "Push via API",
+            //     url: "/campaigns/api",
+            //     active: true,
+            // }, {
+            //     title: "Push via WP Plugin",
+            //     url: "/campaigns/wordpress",
+            //     active: true,
+            // }, {
+            //     title: "Journey Builder",
+            //     url: "/journeys",
+            //     active: true,
+            // }
         ]
     },
     {
@@ -146,7 +148,7 @@ const mainMenuData = [
             title: "Subscription Bell",
             url: "/subs-bell",
             active: true,
-        }, {
+        }/*,{
             title: "Notification Cards",
             url: "/noti-cards",
             active: true,
@@ -154,7 +156,7 @@ const mainMenuData = [
             title: "Welcome Push",
             url: "/welcome-noti",
             active: true,
-        }]
+        }*/]
     },
     {
         title: "Logs",
@@ -184,7 +186,7 @@ const mainMenuData = [
                 title: "Manual Integration",
                 url: "/manual-integ",
                 active: true,
-            },
+            }/*,
             {
                 title: "Wordpress Plugin",
                 url: "/wp-plugin",
@@ -199,7 +201,7 @@ const mainMenuData = [
                 title: "Public key for AMP",
                 url: "/public-amp-keys",
                 active: true,
-            },
+            },*/
         ]
     },
 ]

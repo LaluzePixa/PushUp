@@ -7,21 +7,21 @@
 
 'use client'
 import InfoCard from "@/components/InfoCard";
-import React, { useState } from "react";
+import React from "react";
 
-const InputEditable = () => {
-  const [valor, setValor] = useState("Texto inicial aquí");
-
-  return (
-    <input
-      type="text"
-      value={valor}
-      onChange={e => setValor(e.target.value)}
-      style={{ width: "100%" }}
-      className="w-1/2 border-black border rounded-lg pl-2 p-1"
-    />
-  );
-};
+// const InputEditable = () => {
+//   const [valor, setValor] = useState("Texto inicial aquí");
+//
+//   return (
+//     <input
+//       type="text"
+//       value={valor}
+//       onChange={e => setValor(e.target.value)}
+//       style={{ width: "100%" }}
+//       className="w-1/2 border-black border rounded-lg pl-2 p-1"
+//     />
+//   );
+// };
 
 export default function PAmpKeysPage() {
     return (

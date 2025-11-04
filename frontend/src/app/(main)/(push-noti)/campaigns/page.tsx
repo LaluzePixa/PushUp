@@ -51,7 +51,7 @@ export default function Campaigns() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, pagination, selectedSite?.id]);
+  }, [searchTerm, pagination.current, pagination.limit, selectedSite?.id]);
 
   useEffect(() => {
     loadCampaigns();

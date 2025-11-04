@@ -128,12 +128,12 @@ export default function ManualIntegrationPage() {
                     Verification
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 mb-4">
-                    After installing the code, you can verify it's working by:
+                    After installing the code, you can verify it&apos;s working by:
                 </p>
                 <ul className="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-300">
                     <li>Opening your website in a browser</li>
-                    <li>Opening the browser's Developer Console (F12)</li>
-                    <li>Looking for "PushUp initialized" message in the console</li>
+                    <li>Opening the browser&apos;s Developer Console (F12)</li>
+                    <li>Looking for &quot;PushUp initialized&quot; message in the console</li>
                     <li>The opt-in prompt should appear (if configured)</li>
                 </ul>
             </div>
