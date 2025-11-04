@@ -171,8 +171,8 @@ describe('Campaign Scale Tests', () => {
             expect(response.status).toBe(201);
             expect(response.body.execution).toBeDefined();
 
-            console.log(`✓ Campaign to 1000 users completed in ${duration}ms (${(duration/1000).toFixed(2)}s)`);
-            console.log(`  Average: ${(duration/1000).toFixed(2)}ms per user`);
+            console.log(`✓ Campaign to 1000 users completed in ${duration}ms (${(duration / 1000).toFixed(2)}s)`);
+            console.log(`  Average: ${(duration / 1000).toFixed(2)}ms per user`);
 
             // Should complete within reasonable time (< 60 seconds for 1000 users)
             expect(duration).toBeLessThan(60000);
@@ -407,11 +407,17 @@ describe('Campaign Scale Tests', () => {
 
             // Create and send 3 campaigns with 50 subscribers each
             for (let campaign = 0; campaign < 3; campaign++) {
+                // Create a fresh site for this campaign iteration
+                const campaignSite = await dataFactory.createSite(testUser.id, {
+                    name: `Memory Test Site ${campaign}`,
+                    domain: `memtest${campaign}.com`
+                });
+
                 // Create 50 subscribers
                 const subs = [];
                 for (let i = 0; i < 50; i++) {
                     subs.push(
-                        dataFactory.createSubscription(testSite.id, {
+                        dataFactory.createSubscription(campaignSite.id, {
                             endpoint: `https://fcm.googleapis.com/campaign${campaign}-sub${i}`
                         })
                     );
@@ -426,7 +432,7 @@ describe('Campaign Scale Tests', () => {
                         name: `Memory Test Campaign ${campaign}`,
                         title: 'Test',
                         body: 'Testing memory',
-                        siteId: testSite.id,
+                        siteId: campaignSite.id,
                         sendType: 'immediate'
                     });
 

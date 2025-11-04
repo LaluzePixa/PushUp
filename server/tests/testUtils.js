@@ -4,18 +4,26 @@
  */
 
 import pg from 'pg';
-import { jest } from '@jest/globals';
 
 const { Pool } = pg;
+
+// Global pool instance to avoid connection leaks
+let globalTestPool = null;
 
 /**
  * Database utilities for testing
  */
 export class TestDatabase {
     constructor() {
-        this.pool = new Pool({
-            connectionString: process.env.TEST_DATABASE_URL || 'postgresql://postgres:password@localhost:5432/pushsaas_test'
-        });
+        if (!globalTestPool) {
+            globalTestPool = new Pool({
+                connectionString: process.env.TEST_DATABASE_URL || 'postgresql://postgres:password@localhost:5432/pushsaas_test',
+                max: 5, // Limit max connections
+                idleTimeoutMillis: 30000,
+                connectionTimeoutMillis: 2000,
+            });
+        }
+        this.pool = globalTestPool;
     }
 
     async getClient() {
@@ -45,7 +53,16 @@ export class TestDatabase {
     }
 
     async close() {
-        await this.pool.end();
+        // Don't close the global pool, it will be closed in global teardown
+        return Promise.resolve();
+    }
+
+    // Only close in global teardown
+    static async closeGlobalPool() {
+        if (globalTestPool) {
+            await globalTestPool.end();
+            globalTestPool = null;
+        }
     }
 }
 

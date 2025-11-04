@@ -9,12 +9,12 @@
  * - Session management
  */
 
-import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import bodyParser from 'body-parser';
-import authRoutes from '../routes/auth.js';
-import { TestDatabase, TestDataFactory } from '../../tests/testUtils.js';
+import authRoutes from '../../routes/auth.js';
+import { TestDatabase, TestDataFactory } from '../../../tests/testUtils.js';
 import bcrypt from 'bcrypt';
 
 describe('Authentication Security Tests', () => {

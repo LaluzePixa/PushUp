@@ -60,7 +60,11 @@ const config = {
     forceExit: true,
 
     // Detect open handles
-    detectOpenHandles: true
+    detectOpenHandles: true,
+
+    // Run tests sequentially to avoid connection conflicts
+    maxConcurrency: 1,
+    maxWorkers: 1,
 };
 
 export default config;

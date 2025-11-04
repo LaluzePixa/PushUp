@@ -11,28 +11,25 @@ const { Pool } = pg;
 async function globalTeardown() {
     console.log('🧹 Cleaning up test environment...');
 
-    const testDatabaseUrl = process.env.TEST_DATABASE_URL || 'postgresql://postgres:password@localhost:5432/pushsaas_test';
-
     try {
-        const pool = new Pool({ connectionString: testDatabaseUrl });
-        const client = await pool.connect();
+        const pool = new Pool({
+            connectionString: process.env.TEST_DATABASE_URL || 'postgresql://postgres:password@localhost:5432/pushsaas_test',
+            max: 1
+        });
 
-        // Clean up test data
-        await client.query(`
-      DROP TABLE IF EXISTS campaign_executions CASCADE;
-      DROP TABLE IF EXISTS campaign_actions CASCADE;
-      DROP TABLE IF EXISTS campaigns CASCADE;
-      DROP TABLE IF EXISTS audience_segments CASCADE;
-      DROP TABLE IF EXISTS subscriptions CASCADE;
-      DROP TABLE IF EXISTS optin_configurations CASCADE;
-      DROP TABLE IF EXISTS sites CASCADE;
-      DROP TABLE IF EXISTS users CASCADE;
-    `);
+        await pool.query('DELETE FROM campaign_executions WHERE id > 0');
+        await pool.query('DELETE FROM campaign_actions WHERE id > 0');
+        await pool.query('DELETE FROM campaigns WHERE id > 0');
+        await pool.query('DELETE FROM audience_segments WHERE id > 0');
+        await pool.query('DELETE FROM subscriptions WHERE id > 0');
+        await pool.query('DELETE FROM optin_configurations WHERE id > 0');
+        await pool.query('DELETE FROM sites WHERE id > 0');
+        await pool.query('DELETE FROM users WHERE id > 0');
 
-        console.log('✅ Test database cleaned up');
+        console.log('✅ Test data cleaned');
 
-        client.release();
         await pool.end();
+        console.log('✅ Database connections closed');
 
     } catch (error) {
         console.error('❌ Test cleanup failed:', error.message);

@@ -7,8 +7,8 @@ import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import bodyParser from 'body-parser';
-import authRoutes from '../routes/auth.js';
-import { TestDatabase, TestDataFactory } from '../../tests/testUtils.js';
+import authRoutes from '../../routes/auth.js';
+import { TestDatabase, TestDataFactory } from '../../../tests/testUtils.js';
 
 describe('Rate Limiting Security Tests', () => {
     let app;
@@ -159,7 +159,7 @@ describe('Rate Limiting Security Tests', () => {
     describe('API Endpoint Rate Limiting', () => {
         test('should have global rate limit per user', async () => {
             const user = await dataFactory.createUser();
-            const { signJWT } = await import('../middleware/auth.js');
+            const { signJWT } = await import('../../middleware/auth.js');
             const token = signJWT({
                 id: user.id,
                 email: user.email,

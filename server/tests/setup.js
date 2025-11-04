@@ -3,8 +3,8 @@
  * Runs after test environment is set up but before tests run
  */
 
-import { jest } from '@jest/globals';
 import 'dotenv/config';
+import { jest } from '@jest/globals';
 
 // Set test environment variables
 process.env.NODE_ENV = 'test';
@@ -23,16 +23,6 @@ jest.mock('web-push', () => ({
         privateKey: 'test-private-key'
     })
 }));
-
-// Mock nodemailer if used
-jest.mock('nodemailer', () => ({
-    createTransport: jest.fn().mockReturnValue({
-        sendMail: jest.fn().mockResolvedValue({ messageId: 'test-message-id' })
-    })
-}));
-
-// Increase timeout for database operations
-jest.setTimeout(30000);
 
 // Global test utilities
 global.testUtils = {
@@ -126,9 +116,8 @@ const originalLog = console.log;
 const originalError = console.error;
 
 console.log = (...args) => {
-    if (process.env.JEST_VERBOSE === 'true') {
-        originalLog(...args);
-    }
+    // Always show logs in test mode for now
+    originalLog(...args);
 };
 
 console.error = (...args) => {

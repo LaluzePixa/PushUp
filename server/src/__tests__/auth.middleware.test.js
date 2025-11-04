@@ -112,7 +112,7 @@ describe('Authentication Middleware', () => {
             expect(res.status).toHaveBeenCalledWith(401);
             expect(res.json).toHaveBeenCalledWith({
                 error: 'Token de acceso requerido',
-                code: 'NO_TOKEN'
+                code: 'TOKEN_REQUIRED'
             });
             expect(next).not.toHaveBeenCalled();
         });
@@ -131,7 +131,7 @@ describe('Authentication Middleware', () => {
             expect(res.status).toHaveBeenCalledWith(401);
             expect(res.json).toHaveBeenCalledWith({
                 error: 'Token inválido',
-                code: 'INVALID_TOKEN'
+                code: 'TOKEN_INVALID'
             });
             expect(next).not.toHaveBeenCalled();
         });

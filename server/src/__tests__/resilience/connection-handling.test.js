@@ -7,9 +7,9 @@ import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import bodyParser from 'body-parser';
-import sitesRoutes from '../routes/sites.js';
-import { authenticateToken } from '../middleware/auth.js';
-import { TestDatabase, TestDataFactory, TestAuth } from '../../tests/testUtils.js';
+import sitesRoutes from '../../routes/sites.js';
+import { authenticateToken } from '../../middleware/auth.js';
+import { TestDatabase, TestDataFactory, TestAuth } from '../../../tests/testUtils.js';
 
 describe('Database Connection Resilience Tests', () => {
     let app;

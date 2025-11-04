@@ -209,7 +209,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // GET /sites/:id - Obtener sitio específico
-router.get('/:id', authenticateToken, authorizeRoles('admin', 'superadmin'), async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const siteId = parseInt(req.params.id);
@@ -425,7 +425,7 @@ router.delete('/:id', authenticateToken, authorizeRoles('admin', 'superadmin'), 
 });
 
 // GET /sites/:id/subscriptions - Obtener suscripciones de un sitio
-router.get('/:id/subscriptions', authenticateToken, authorizeRoles('admin', 'superadmin'), async (req, res) => {
+router.get('/:id/subscriptions', authenticateToken, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const siteId = parseInt(req.params.id);
