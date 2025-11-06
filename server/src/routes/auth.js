@@ -1,6 +1,7 @@
 import express from 'express';
 import { signJWT, hashPassword, comparePassword, authenticateToken } from '../middleware/auth.js';
 import { authLimiter, registerLimiter } from '../middleware/rateLimiter.js';
+import logger from '../config/logger.js';
 
 const router = express.Router();
 
@@ -185,7 +186,7 @@ router.post('/register', registerLimiter, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('[Register Error]', error);
+    logger.error({ err: error }, 'Register error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -267,7 +268,7 @@ router.post('/login', authLimiter, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Login Error]', error);
+    logger.error({ err: error, email: req.body.email }, 'Login error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -308,7 +309,7 @@ router.get('/me', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Me Error]', error);
+    logger.error({ err: error, userId: req.user?.id }, 'Get user info error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -378,7 +379,7 @@ router.post('/change-password', authLimiter, authenticateToken, async (req, res)
     });
 
   } catch (error) {
-    console.error('[Change Password Error]', error);
+    logger.error({ err: error, userId: req.user?.id }, 'Change password error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'

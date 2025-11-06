@@ -5,6 +5,7 @@ import cors from 'cors';
 import pg from 'pg';
 import webpush from 'web-push';
 import helmet from 'helmet';
+import pinoHttp from 'pino-http';
 
 // Importar rutas y middlewares
 import authRoutes from './routes/auth.js';
@@ -17,8 +18,9 @@ import optinsRoutes from './routes/optins.js';
 import subscriptionBellRoutes from './routes/subscriptionBell.js';
 import { authenticateToken, authorizeRoles, optionalAuth } from './middleware/auth.js';
 
-// Importar servicios
+// Importar servicios y configuración
 import CampaignScheduler from './services/campaignScheduler.js';
+import logger from './config/logger.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,6 +42,26 @@ app.use(helmet({
   },
   crossOriginEmbedderPolicy: false, // Allow push notifications to work
   crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow resources from other origins
+}));
+
+// HTTP Request Logging with Pino
+app.use(pinoHttp({
+  logger,
+  customLogLevel: (req, res, err) => {
+    if (res.statusCode >= 500 || err) return 'error';
+    if (res.statusCode >= 400) return 'warn';
+    return 'info';
+  },
+  customSuccessMessage: (req, res) => {
+    return `${req.method} ${req.url} - ${res.statusCode}`;
+  },
+  customErrorMessage: (req, res, err) => {
+    return `${req.method} ${req.url} - ${res.statusCode} - ${err.message}`;
+  },
+  // Don't log health checks to reduce noise
+  autoLogging: {
+    ignore: (req) => req.url === '/healthz'
+  }
 }));
 
 app.use(bodyParser.json());
@@ -118,7 +140,7 @@ app.get('/demo-client', (req, res) => {
 // guardar suscripción (con autenticación opcional)
 app.post('/subscribe', optionalAuth, async (req, res) => {
   try {
-    console.log('[subscribe] body=', JSON.stringify(req.body).slice(0, 200)); // debug
+    logger.debug({ body: JSON.stringify(req.body).slice(0, 200) }, 'Subscribe request received');
     const sub = req.body;
     const { siteId } = req.body; // Para soporte multi-tenant
 
@@ -159,7 +181,7 @@ app.post('/subscribe', optionalAuth, async (req, res) => {
       message: 'Suscripción guardada exitosamente'
     });
   } catch (error) {
-    console.error('[Subscribe Error]', error);
+    logger.error({ err: error }, 'Subscribe error');
     res.status(500).json({
       success: false,
       error: {
@@ -244,7 +266,14 @@ app.post('/send', authenticateToken, authorizeRoles('admin', 'superadmin'), asyn
     }));
 
     // Log para auditoría
-    console.log(`[Send Notification] User: ${req.user.email} (${req.user.role}) - Sent: ${sent}, Errors: ${errors}, Removed: ${removed}`);
+    logger.info({
+      user: req.user.email,
+      role: req.user.role,
+      sent,
+      errors,
+      removed,
+      total: targets.length
+    }, 'Send notification completed');
 
     res.json({
       ok: true,
@@ -255,7 +284,7 @@ app.post('/send', authenticateToken, authorizeRoles('admin', 'superadmin'), asyn
       message: `Notificaciones procesadas: ${sent} enviadas, ${errors} errores, ${removed} suscripciones eliminadas`
     });
   } catch (error) {
-    console.error('[Send Error]', error);
+    logger.error({ err: error }, 'Send notification error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -278,15 +307,17 @@ app.get('/scheduler/stats', authenticateToken, authorizeRoles('admin', 'superadm
 
 // Manejar cierre graceful del servidor
 process.on('SIGINT', () => {
-  console.log('\n[Server] Cerrando servidor...');
+  logger.info('Received SIGINT, shutting down gracefully...');
   campaignScheduler.stop();
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log('\n[Server] Cerrando servidor...');
+  logger.info('Received SIGTERM, shutting down gracefully...');
   campaignScheduler.stop();
   process.exit(0);
 });
 
-app.listen(PORT, () => console.log(`pushsaas API en http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  logger.info({ port: PORT, env: process.env.NODE_ENV }, 'PushSaaS API server started');
+});
