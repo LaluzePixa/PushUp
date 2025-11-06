@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import pg from 'pg';
 import webpush from 'web-push';
+import helmet from 'helmet';
 
 // Importar rutas y middlewares
 import authRoutes from './routes/auth.js';
@@ -21,6 +22,25 @@ import CampaignScheduler from './services/campaignScheduler.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Security: Helmet adds security headers to protect against common vulnerabilities
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Allow push notifications to work
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow resources from other origins
+}));
 
 app.use(bodyParser.json());
 
