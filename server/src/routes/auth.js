@@ -1,5 +1,7 @@
 import express from 'express';
 import { signJWT, hashPassword, comparePassword, authenticateToken } from '../middleware/auth.js';
+import { authLimiter, registerLimiter } from '../middleware/rateLimiter.js';
+import logger from '../config/logger.js';
 
 const router = express.Router();
 
@@ -54,7 +56,8 @@ const isValidPassword = (password) => {
 };
 
 // POST /auth/register - Registro de usuarios
-router.post('/register', async (req, res) => {
+// Rate limited to prevent spam account creation
+router.post('/register', registerLimiter, async (req, res) => {
   try {
     const { email, password, role = 'user' } = req.body;
 
@@ -183,7 +186,7 @@ router.post('/register', async (req, res) => {
     }
 
   } catch (error) {
-    console.error('[Register Error]', error);
+    logger.error({ err: error }, 'Register error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -192,7 +195,8 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /auth/login - Inicio de sesión
-router.post('/login', async (req, res) => {
+// Rate limited to prevent brute force attacks
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -264,7 +268,7 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Login Error]', error);
+    logger.error({ err: error, email: req.body.email }, 'Login error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -305,7 +309,7 @@ router.get('/me', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Me Error]', error);
+    logger.error({ err: error, userId: req.user?.id }, 'Get user info error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -314,7 +318,8 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 // POST /auth/change-password - Cambiar contraseña
-router.post('/change-password', authenticateToken, async (req, res) => {
+// Rate limited to prevent brute force attacks
+router.post('/change-password', authLimiter, authenticateToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
@@ -374,7 +379,7 @@ router.post('/change-password', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Change Password Error]', error);
+    logger.error({ err: error, userId: req.user?.id }, 'Change password error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'

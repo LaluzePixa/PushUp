@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
+import logger from '../config/logger.js';
 
 const router = express.Router();
 
@@ -101,8 +102,9 @@ router.get('/', authenticateToken, async (req, res) => {
 
     // Búsqueda por nombre
     if (search) {
+      const sanitized = sanitizeForLike(search);
       whereConditions.push(`name ILIKE $${paramCounter}`);
-      queryParams.push(`%${search}%`);
+      queryParams.push(`%${sanitized}%`);
       paramCounter++;
     }
 
@@ -154,7 +156,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Segments List Error]', error);
+    logger.error({ err: error }, 'Segments list error');
     res.status(500).json({
       success: false,
       error: {
@@ -235,7 +237,7 @@ router.post('/', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Segment Create Error]', error);
+    logger.error({ err: error }, 'Segment create error');
     res.status(500).json({
       success: false,
       error: {
@@ -287,7 +289,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Segment Get Error]', error);
+    logger.error({ err: error }, 'Segment get error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -400,7 +402,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Segment Update Error]', error);
+    logger.error({ err: error }, 'Segment update error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -461,7 +463,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Segment Delete Error]', error);
+    logger.error({ err: error }, 'Segment delete error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -552,7 +554,7 @@ router.post('/:id/preview', authenticateToken, authorizeRoles('admin', 'superadm
     });
 
   } catch (error) {
-    console.error('[Segment Preview Error]', error);
+    logger.error({ err: error }, 'Segment preview error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -621,7 +623,7 @@ router.post('/preview', authenticateToken, authorizeRoles('admin', 'superadmin')
     });
 
   } catch (error) {
-    console.error('[Segment Preview Error]', error);
+    logger.error({ err: error }, 'Segment preview error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'

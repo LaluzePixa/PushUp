@@ -1,7 +1,14 @@
 import express from 'express';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
+import logger from '../config/logger.js';
+import { sanitizeForLike } from '../utils/sanitize.js';
+import { sanitizeRequestBody, sanitizeQueryParams, validateSiteData } from '../middleware/sanitization.js';
 
 const router = express.Router();
+
+// Apply sanitization middleware to all routes
+router.use(sanitizeRequestBody);
+router.use(sanitizeQueryParams);
 
 // Validación de sitio
 const validateSite = (data) => {
@@ -50,8 +57,9 @@ router.get('/', authenticateToken, async (req, res) => {
 
     // Búsqueda por nombre o dominio
     if (search) {
+      const sanitized = sanitizeForLike(search);
       whereConditions.push(`(s.name ILIKE $${paramCounter} OR s.domain ILIKE $${paramCounter})`);
-      queryParams.push(`%${search}%`);
+      queryParams.push(`%${sanitized}%`);
       paramCounter++;
     }
 
@@ -113,7 +121,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Sites List Error]', error);
+    logger.error({ err: error }, 'Sites list error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -122,7 +130,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // POST /sites - Crear nuevo sitio
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, validateSiteData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const { name, domain, description } = req.body;
@@ -200,7 +208,7 @@ router.post('/', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Site Create Error]', error);
+    logger.error({ err: error }, 'Site create error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -258,7 +266,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Site Get Error]', error);
+    logger.error({ err: error }, 'Site get error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -267,7 +275,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // PUT /sites/:id - Actualizar sitio
-router.put('/:id', authenticateToken, authorizeRoles('admin', 'superadmin'), async (req, res) => {
+router.put('/:id', authenticateToken, authorizeRoles('admin', 'superadmin'), validateSiteData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const siteId = parseInt(req.params.id);
@@ -351,7 +359,7 @@ router.put('/:id', authenticateToken, authorizeRoles('admin', 'superadmin'), asy
     });
 
   } catch (error) {
-    console.error('[Site Update Error]', error);
+    logger.error({ err: error }, 'Site update error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -416,7 +424,7 @@ router.delete('/:id', authenticateToken, authorizeRoles('admin', 'superadmin'), 
     });
 
   } catch (error) {
-    console.error('[Site Delete Error]', error);
+    logger.error({ err: error }, 'Site delete error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -491,7 +499,7 @@ router.get('/:id/subscriptions', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Site Subscriptions Error]', error);
+    logger.error({ err: error }, 'Site subscriptions error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'

@@ -1,5 +1,6 @@
 import { createVerifier, createSigner } from 'fast-jwt';
 import bcrypt from 'bcrypt';
+import logger from '../config/logger.js';
 
 // Configuración JWT
 // SEGURIDAD: No permitir fallback a secret débil
@@ -71,7 +72,7 @@ export const authenticateToken = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('[Auth Error]', error.message);
+    logger.warn({ err: error, path: req.path }, 'Authentication failed');
 
     // Manejar diferentes tipos de errores de JWT
     if (error.code === 'FAST_JWT_EXPIRED') {
@@ -175,7 +176,7 @@ export const optionalAuth = async (req, res, next) => {
     }
   } catch (error) {
     // En rutas opcionales, ignoramos errores de autenticación
-    console.log('[Optional Auth] Token inválido o expirado, continuando sin usuario');
+    logger.debug({ err: error }, 'Optional auth: Invalid or expired token, continuing without user');
   }
 
   next();

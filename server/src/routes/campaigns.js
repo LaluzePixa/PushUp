@@ -3,11 +3,18 @@ import { CronJob } from 'cron';
 import webpush from 'web-push';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
 import { getWorkerPool } from '../services/worker-pool.js';
+import logger from '../config/logger.js';
 import dotenv from 'dotenv';
+import { sanitizeRequestBody, sanitizeQueryParams, validateCampaignData } from '../middleware/sanitization.js';
+import { sanitizeForLike } from '../utils/sanitize.js';
 
 dotenv.config();
 
 const router = express.Router();
+
+// Apply sanitization middleware to all routes
+router.use(sanitizeRequestBody);
+router.use(sanitizeQueryParams);
 
 // Configuración del worker pool desde .env
 const WORKER_POOL_SIZE = parseInt(process.env.WORKER_POOL_SIZE) || 0; // 0 = auto-detect
@@ -183,7 +190,7 @@ const executeCampaign = async (pool, campaignId) => {
     const batchSize = NOTIFICATION_BATCH_SIZE;
     const batches = Math.ceil(subscriptions.length / batchSize);
 
-    console.log(`[Campaign ${campaignId}] 🚀 Sending to ${subscriptions.length} subscribers in ${batches} batches using worker pool`);
+    logger.info({ campaignId, subscribers: subscriptions.length, batches }, 'Sending to subscribers using worker pool');
 
     const startSendTime = Date.now();
     const workerPool = getOrCreateWorkerPool();
@@ -207,7 +214,7 @@ const executeCampaign = async (pool, campaignId) => {
     }
 
     // Ejecutar todas las tareas en paralelo usando el worker pool
-    console.log(`[Campaign ${campaignId}] 📤 Distributing ${workerTasks.length} tasks across ${workerPool.size} workers`);
+    logger.info({ campaignId, tasks: workerTasks.length, workers: workerPool.size }, 'Distributing tasks across workers');
 
     const workerResults = await workerPool.executeMany(workerTasks);
 
@@ -232,9 +239,12 @@ const executeCampaign = async (pool, campaignId) => {
     const sendDuration = Date.now() - startSendTime;
     const throughput = (subscriptions.length / (sendDuration / 1000)).toFixed(2);
 
-    console.log(`[Campaign ${campaignId}] ✅ Sending completed in ${(sendDuration / 1000).toFixed(2)}s`);
-    console.log(`[Campaign ${campaignId}] 📊 Throughput: ${throughput} notifications/second`);
-    console.log(`[Campaign ${campaignId}] 📈 Stats: ${totalSent} sent, ${totalFailed} failed, ${totalExpired} expired`);
+    logger.info({
+      campaignId,
+      durationSeconds: (sendDuration / 1000).toFixed(2),
+      throughput,
+      stats: { sent: totalSent, failed: totalFailed, expired: totalExpired }
+    }, 'Sending completed');
 
     // ========================================
     // BULK DATABASE OPERATIONS
@@ -272,7 +282,7 @@ const executeCampaign = async (pool, campaignId) => {
           `DELETE FROM subscriptions WHERE id = ANY($1)`,
           [expiredSubscriptionIds]
         );
-        console.log(`[Campaign ${campaignId}] 🗑️  Removed ${expiredSubscriptionIds.length} expired subscriptions`);
+        logger.info({ campaignId, removed: expiredSubscriptionIds.length }, 'Removed expired subscriptions');
       }
     }
 
@@ -286,7 +296,7 @@ const executeCampaign = async (pool, campaignId) => {
 
     await client.query('COMMIT');
 
-    console.log(`[Campaign ${campaignId}] Ejecutada: ${totalSent} enviadas, ${totalFailed} fallidas`);
+    logger.info({ campaignId, sent: totalSent, failed: totalFailed }, 'Campaign executed');
 
     return {
       sent: totalSent,
@@ -297,7 +307,7 @@ const executeCampaign = async (pool, campaignId) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error(`[Campaign ${campaignId} Error]`, error);
+    logger.error({ err: error, campaignId }, 'Campaign execution error');
     throw error;
   } finally {
     client.release();
@@ -305,7 +315,7 @@ const executeCampaign = async (pool, campaignId) => {
 };
 
 // POST /campaigns - Crear nueva campaña
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, validateCampaignData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const {
@@ -371,13 +381,13 @@ router.post('/', authenticateToken, async (req, res) => {
 
       const campaign = campaignResult.rows[0];
 
-      console.log('[Campaign Created]', {
+      logger.info({
         id: campaign.id,
         name: campaign.name,
         user_id: campaign.user_id,
         status: campaign.status,
         send_type: campaign.send_type
-      });
+      }, 'Campaign created');
 
       // Crear acciones si las hay
       if (actions && actions.length > 0) {
@@ -411,7 +421,7 @@ router.post('/', authenticateToken, async (req, res) => {
           });
 
         } catch (execError) {
-          console.error('[Campaign Execution Error]', execError);
+          logger.error({ err: execError }, 'Campaign execution error');
 
           return res.status(500).json({
             success: false,
@@ -433,17 +443,17 @@ router.post('/', authenticateToken, async (req, res) => {
               await executeCampaign(pool, campaign.id);
               scheduledJobs.delete(campaign.id);
             } catch (error) {
-              console.error(`[Scheduled Campaign ${campaign.id} Error]`, error);
+              logger.error({ err: error, campaignId: campaign.id }, 'Scheduled campaign execution error');
             }
           });
 
           job.start();
           scheduledJobs.set(campaign.id, job);
 
-          console.log(`[Campaign ${campaign.id}] Programada para ${scheduledDate.toISOString()}`);
+          logger.info({ campaignId: campaign.id, scheduledDate: scheduledDate.toISOString() }, 'Campaign scheduled');
 
         } catch (cronError) {
-          console.error('[Cron Job Creation Error]', cronError);
+          logger.error({ err: cronError }, 'Cron job creation error');
           await client.query('ROLLBACK');
           return res.status(500).json({
             success: false,
@@ -482,7 +492,7 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('[Campaign Create Error]', error);
+    logger.error({ err: error }, 'Campaign create error');
     res.status(500).json({
       success: false,
       error: {
@@ -576,7 +586,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Campaign Get Error]', error);
+    logger.error({ err: error }, 'Campaign get error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -585,7 +595,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // PUT /campaigns/:id - Actualizar campaña (solo borradores)
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, validateCampaignData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const campaignId = parseInt(req.params.id);
@@ -720,7 +730,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('[Campaign Update Error]', error);
+    logger.error({ err: error }, 'Campaign update error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -775,7 +785,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Campaign Delete Error]', error);
+    logger.error({ err: error }, 'Campaign delete error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -832,7 +842,7 @@ router.post('/:id/send', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Campaign Send Error]', error);
+    logger.error({ err: error }, 'Campaign send error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -891,8 +901,9 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 
     if (search) {
+      const sanitized = sanitizeForLike(search);
       query += ` AND (c.name ILIKE $${paramIndex} OR c.title ILIKE $${paramIndex} OR c.body ILIKE $${paramIndex})`;
-      queryParams.push(`%${search}%`);
+      queryParams.push(`%${sanitized}%`);
       paramIndex++;
     }
 
@@ -906,12 +917,12 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const result = await pool.query(query, queryParams);
 
-    console.log('[Campaigns Query]', {
+    logger.info({
       userId,
       query: query.replace(/\s+/g, ' ').trim(),
       queryParams,
       rowCount: result.rows.length
-    });
+    }, 'Campaigns query executed');
 
     // Formatear datos para el frontend
     const formattedCampaigns = result.rows.map(campaign => {
@@ -964,7 +975,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error getting campaigns:', error);
+    logger.error({ err: error }, 'Error getting campaigns');
     res.status(500).json({
       success: false,
       error: {

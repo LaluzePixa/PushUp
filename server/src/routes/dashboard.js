@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import logger from '../config/logger.js';
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.get('/analytics', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error getting analytics data:', error);
+        logger.error({ err: error }, 'Error getting analytics data');
         res.status(500).json({
             success: false,
             error: {
@@ -190,7 +191,7 @@ router.get('/metrics', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error getting dashboard metrics:', error);
+        logger.error({ err: error }, 'Error getting dashboard metrics');
         res.status(500).json({
             success: false,
             error: {
@@ -352,7 +353,7 @@ async function getGlobalMetrics(pool, siteId = null) {
             }
         };
     } catch (error) {
-        console.error('Error in getGlobalMetrics:', error);
+        logger.error({ err: error }, 'Error in getGlobalMetrics');
         // Retornar métricas por defecto en caso de error
         return {
             active_users: {
@@ -543,7 +544,7 @@ async function getUserMetrics(pool, userId, siteId = null) {
             }
         };
     } catch (error) {
-        console.error('Error in getUserMetrics:', error);
+        logger.error({ err: error }, 'Error in getUserMetrics');
         // Retornar métricas por defecto en caso de error
         return {
             active_users: {
@@ -717,7 +718,7 @@ router.get('/subscriptions', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error getting subscriptions:', error);
+        logger.error({ err: error }, 'Error getting subscriptions');
         res.status(500).json({
             success: false,
             error: {
@@ -845,7 +846,7 @@ router.get('/segments', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error getting segments:', error);
+        logger.error({ err: error }, 'Error getting segments');
         res.status(500).json({
             success: false,
             error: {
@@ -959,7 +960,7 @@ router.get('/recent-campaigns', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error getting recent campaigns:', error);
+        logger.error({ err: error }, 'Error getting recent campaigns');
         res.status(500).json({
             success: false,
             error: {
@@ -1007,8 +1008,9 @@ router.get('/journeys', authenticateToken, async (req, res) => {
         }
 
         if (search) {
+            const sanitized = sanitizeForLike(search);
             query += ` AND j.name ILIKE $${paramIndex}`;
-            queryParams.push(`%${search}%`);
+            queryParams.push(`%${sanitized}%`);
             paramIndex++;
         }
 
@@ -1059,7 +1061,7 @@ router.get('/journeys', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error getting journeys:', error);
+        logger.error({ err: error }, 'Error getting journeys');
         res.status(500).json({
             success: false,
             error: {
@@ -1127,7 +1129,7 @@ router.get('/monitoring-locations', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error getting monitoring locations:', error);
+        logger.error({ err: error }, 'Error getting monitoring locations');
         res.status(500).json({
             success: false,
             error: {
