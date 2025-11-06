@@ -140,8 +140,8 @@ describe('Input Sanitization Tests', () => {
         });
     });
 
-    describe('⚠️ XSS Prevention (NOT YET IMPLEMENTED)', () => {
-        test('XSS in site name - DOCUMENTS NEEDED BEHAVIOR', async () => {
+    describe('✅ XSS Prevention (Implemented)', () => {
+        test('should strip XSS from site name', async () => {
             const xssPayload = '<script>alert("XSS")</script>';
 
             const response = await request(app)
@@ -152,16 +152,13 @@ describe('Input Sanitization Tests', () => {
                     domain: 'test.com'
                 });
 
-            if (response.status === 201 && response.body.data?.name?.includes('<script>')) {
-                console.warn('⚠️  TODO: XSS PAYLOAD ACCEPTED - Need to implement HTML sanitization');
-                console.warn('   Recommended: Use DOMPurify or validator library');
-            }
-
-            // Test should document the issue but not fail (yet)
+            // Should succeed but with HTML stripped
             expect(response.status).toBe(201);
+            expect(response.body.data.name).not.toContain('<script>');
+            expect(response.body.data.name).not.toContain('alert');
         });
 
-        test('XSS in campaign title - DOCUMENTS NEEDED BEHAVIOR', async () => {
+        test('should strip XSS from campaign title', async () => {
             const site = await dataFactory.createSite(testUser.id);
             const xssPayload = '<img src=x onerror=alert(1)>';
 
@@ -176,11 +173,31 @@ describe('Input Sanitization Tests', () => {
                     sendType: 'immediate'
                 });
 
-            if (response.status === 201 && response.body.campaign?.title?.includes('<img')) {
-                console.warn('⚠️  TODO: XSS PAYLOAD ACCEPTED in campaign title - Need HTML sanitization');
-            }
-
+            // Should succeed but with HTML stripped
             expect(response.status).toBe(201);
+            expect(response.body.data.title).not.toContain('<img');
+            expect(response.body.data.title).not.toContain('onerror');
+        });
+
+        test('should strip XSS from campaign body', async () => {
+            const site = await dataFactory.createSite(testUser.id);
+            const xssPayload = '<iframe src="evil.com"></iframe>Test';
+
+            const response = await request(app)
+                .post('/campaigns')
+                .set(authHeaders)
+                .send({
+                    name: 'Test Campaign',
+                    title: 'Title',
+                    body: xssPayload,
+                    siteId: site.id,
+                    sendType: 'immediate'
+                });
+
+            // Should succeed but with HTML stripped
+            expect(response.status).toBe(201);
+            expect(response.body.data.body).not.toContain('<iframe');
+            expect(response.body.data.body).not.toContain('evil.com');
         });
     });
 
@@ -308,11 +325,31 @@ describe('Input Sanitization Tests', () => {
                         domain: domain
                     });
 
-                // Should reject these domains
-                if (response.status === 201) {
-                    console.warn(\`⚠️  TODO: MALICIOUS DOMAIN ACCEPTED: \${domain}\`);
-                    console.warn('   Recommended: Add domain format validation');
-                }
+                // Should reject these domains with 400 validation error
+                expect(response.status).toBe(400);
+                expect(response.body.error).toBeDefined();
+            }
+        });
+
+        test('should reject invalid domain formats', async () => {
+            const invalidDomains = [
+                'not a domain',
+                'example',
+                '192.168.1.1', // IP addresses not allowed
+                'http://example.com', // Protocol not allowed
+            ];
+
+            for (const domain of invalidDomains) {
+                const response = await request(app)
+                    .post('/sites')
+                    .set(authHeaders)
+                    .send({
+                        name: 'Test Site',
+                        domain: domain
+                    });
+
+                // Should reject with 400
+                expect(response.status).toBe(400);
             }
         });
     });
@@ -344,7 +381,7 @@ describe('Input Sanitization Tests', () => {
     });
 
     describe('✅ NoSQL Injection Prevention', () => {
-        test('should reject object injection in string fields', async () => {
+        test('should reject object injection in campaign name field', async () => {
             const site = await dataFactory.createSite(testUser.id);
 
             const response = await request(app)
@@ -358,11 +395,48 @@ describe('Input Sanitization Tests', () => {
                     sendType: 'immediate'
                 });
 
-            // Should reject or handle safely
-            if (response.status === 201) {
-                console.warn('⚠️  TODO: NoSQL INJECTION - Object accepted as string field');
-                console.warn('   Recommended: Add type validation middleware');
-            }
+            // Should reject with 400 validation error
+            expect(response.status).toBe(400);
+            expect(response.body.success).toBe(false);
+            expect(response.body.error.code).toBe('VALIDATION_ERROR');
+        });
+
+        test('should reject object injection in campaign title field', async () => {
+            const site = await dataFactory.createSite(testUser.id);
+
+            const response = await request(app)
+                .post('/campaigns')
+                .set(authHeaders)
+                .send({
+                    name: 'Test Campaign',
+                    title: { $gt: '' }, // NoSQL injection attempt
+                    body: 'Test',
+                    siteId: site.id,
+                    sendType: 'immediate'
+                });
+
+            // Should reject with 400 validation error
+            expect(response.status).toBe(400);
+            expect(response.body.success).toBe(false);
+        });
+
+        test('should reject array injection in string fields', async () => {
+            const site = await dataFactory.createSite(testUser.id);
+
+            const response = await request(app)
+                .post('/campaigns')
+                .set(authHeaders)
+                .send({
+                    name: 'Test Campaign',
+                    title: 'Test',
+                    body: ['malicious', 'array'], // Array instead of string
+                    siteId: site.id,
+                    sendType: 'immediate'
+                });
+
+            // Should reject with 400 validation error
+            expect(response.status).toBe(400);
+            expect(response.body.success).toBe(false);
         });
     });
 
@@ -403,37 +477,40 @@ describe('Input Sanitization Tests', () => {
 /**
  * IMPLEMENTATION STATUS:
  *
- * ✅ IMPLEMENTED:
+ * ✅ FULLY IMPLEMENTED:
  * - SQL injection prevention (parameterized queries)
  * - ILIKE sanitization for search queries (sanitizeForLike)
- * - JSON payload size limits
+ * - XSS prevention (HTML tag stripping via validator + xss libraries)
+ * - Domain format validation (validator.isFQDN)
+ * - Type validation for JSON fields (prevents NoSQL injection)
+ * - Control character filtering
+ * - Null byte filtering
+ * - JSON payload size limits (1MB)
  * - Unicode/emoji handling
  * - Content-Type validation
  * - Error message sanitization
  *
- * ⚠️ TODO (Not yet implemented):
- * - XSS prevention (HTML tag stripping, DOMPurify)
- * - Domain format validation
- * - Type validation for JSON fields (prevent NoSQL injection)
- * - Control character filtering
- * - Null byte filtering
+ * IMPLEMENTATION DETAILS:
  *
- * RECOMMENDED NEXT STEPS:
+ * 1. Sanitization utilities (server/src/utils/sanitize.js):
+ *    - sanitizeHTML() - Strips or allows safe HTML
+ *    - sanitizeText() - Comprehensive text cleaning
+ *    - stripControlCharacters() - Removes control chars
+ *    - validateDomain() - FQDN validation
+ *    - validateType() - Type checking for NoSQL prevention
  *
- * 1. Install sanitization libraries:
- *    npm install validator dompurify jsdom
+ * 2. Middleware (server/src/middleware/sanitization.js):
+ *    - sanitizeRequestBody() - Cleans all POST/PUT/PATCH data
+ *    - sanitizeQueryParams() - Cleans GET query parameters
+ *    - validateSiteData() - Site-specific validation
+ *    - validateCampaignData() - Campaign-specific validation
+ *    - validateRequestData() - Logs suspicious patterns
  *
- * 2. Create validation middleware:
- *    - Strip HTML tags from text fields
- *    - Validate email formats
- *    - Validate domain formats
- *    - Enforce type checking
+ * 3. Applied to routes:
+ *    - sites.js - All routes sanitized
+ *    - campaigns.js - All routes sanitized
  *
- * 3. Apply middleware to all routes:
- *    app.use(sanitizeInput);
- *    app.use(validateTypes);
- *
- * 4. Monitor for injection attempts:
- *    - Log suspicious inputs
- *    - Alert on repeated attempts
+ * 4. Monitoring:
+ *    - Suspicious input patterns logged (XSS, NoSQL operators)
+ *    - Includes IP, path, method for security auditing
  */

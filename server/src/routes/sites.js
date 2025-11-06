@@ -2,8 +2,13 @@ import express from 'express';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
 import logger from '../config/logger.js';
 import { sanitizeForLike } from '../utils/sanitize.js';
+import { sanitizeRequestBody, sanitizeQueryParams, validateSiteData } from '../middleware/sanitization.js';
 
 const router = express.Router();
+
+// Apply sanitization middleware to all routes
+router.use(sanitizeRequestBody);
+router.use(sanitizeQueryParams);
 
 // Validación de sitio
 const validateSite = (data) => {
@@ -125,7 +130,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // POST /sites - Crear nuevo sitio
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, validateSiteData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const { name, domain, description } = req.body;
@@ -270,7 +275,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // PUT /sites/:id - Actualizar sitio
-router.put('/:id', authenticateToken, authorizeRoles('admin', 'superadmin'), async (req, res) => {
+router.put('/:id', authenticateToken, authorizeRoles('admin', 'superadmin'), validateSiteData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const siteId = parseInt(req.params.id);

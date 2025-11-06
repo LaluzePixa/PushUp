@@ -5,10 +5,16 @@ import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
 import { getWorkerPool } from '../services/worker-pool.js';
 import logger from '../config/logger.js';
 import dotenv from 'dotenv';
+import { sanitizeRequestBody, sanitizeQueryParams, validateCampaignData } from '../middleware/sanitization.js';
+import { sanitizeForLike } from '../utils/sanitize.js';
 
 dotenv.config();
 
 const router = express.Router();
+
+// Apply sanitization middleware to all routes
+router.use(sanitizeRequestBody);
+router.use(sanitizeQueryParams);
 
 // Configuración del worker pool desde .env
 const WORKER_POOL_SIZE = parseInt(process.env.WORKER_POOL_SIZE) || 0; // 0 = auto-detect
@@ -309,7 +315,7 @@ const executeCampaign = async (pool, campaignId) => {
 };
 
 // POST /campaigns - Crear nueva campaña
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, validateCampaignData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const {
@@ -589,7 +595,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // PUT /campaigns/:id - Actualizar campaña (solo borradores)
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, validateCampaignData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const campaignId = parseInt(req.params.id);
