@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import logger from '../config/logger.js';
 
 const router = express.Router();
 
@@ -91,7 +92,7 @@ router.get('/', authenticateToken, async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Error fetching opt-in config:', error);
+    logger.error({ err: error }, 'Error fetching opt-in config');
     res.status(500).json({
       success: false,
       error: {
@@ -278,7 +279,7 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error saving opt-in config:', error);
+    logger.error({ err: error }, 'Error saving opt-in config');
     res.status(500).json({
       success: false,
       error: {
@@ -355,7 +356,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching opt-in config by ID:', error);
+    logger.error({ err: error }, 'Error fetching opt-in config by ID');
     res.status(500).json({
       success: false,
       error: {
@@ -392,7 +393,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       message: 'Configuración de opt-in actualizada exitosamente'
     });
   } catch (error) {
-    console.error('Error updating opt-in config:', error);
+    logger.error({ err: error }, 'Error updating opt-in config');
     res.status(500).json({
       success: false,
       error: {
@@ -420,7 +421,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       message: 'Configuración de opt-in eliminada exitosamente'
     });
   } catch (error) {
-    console.error('Error deleting opt-in config:', error);
+    logger.error({ err: error }, 'Error deleting opt-in config');
     res.status(500).json({
       success: false,
       error: {
@@ -528,7 +529,7 @@ function YourComponent() {
       }
     });
   } catch (error) {
-    console.error('Error generating integration code:', error);
+    logger.error({ err: error }, 'Error generating integration code');
     res.status(500).json({
       success: false,
       error: {

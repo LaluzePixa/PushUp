@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
+import logger from '../config/logger.js';
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ router.get('/config', (req, res) => {
             message: 'Configuración obtenida exitosamente'
         });
     } catch (error) {
-        console.error('Error getting subscription bell config:', error);
+        logger.error({ err: error }, 'Error getting subscription bell config');
         res.status(500).json({
             success: false,
             error: {
@@ -123,7 +124,7 @@ router.post('/config', authenticateToken, authorizeRoles('admin', 'superadmin'),
             message: 'Configuración actualizada exitosamente'
         });
     } catch (error) {
-        console.error('Error updating subscription bell config:', error);
+        logger.error({ err: error }, 'Error updating subscription bell config');
         res.status(500).json({
             success: false,
             error: {
@@ -166,7 +167,7 @@ router.post('/toggle', authenticateToken, authorizeRoles('admin', 'superadmin'),
             message: `Campana de suscripción ${isActive ? 'activada' : 'desactivada'} exitosamente`
         });
     } catch (error) {
-        console.error('Error toggling subscription bell:', error);
+        logger.error({ err: error }, 'Error toggling subscription bell');
         res.status(500).json({
             success: false,
             error: {
@@ -208,7 +209,7 @@ router.get('/widget-config', (req, res) => {
             message: 'Configuración del widget obtenida exitosamente'
         });
     } catch (error) {
-        console.error('Error getting widget config:', error);
+        logger.error({ err: error }, 'Error getting widget config');
         res.status(500).json({
             success: false,
             error: {
@@ -254,7 +255,7 @@ router.get('/recent-campaigns', (req, res) => {
             message: 'Campañas recientes obtenidas exitosamente'
         });
     } catch (error) {
-        console.error('Error getting recent campaigns:', error);
+        logger.error({ err: error }, 'Error getting recent campaigns');
         res.status(500).json({
             success: false,
             error: {

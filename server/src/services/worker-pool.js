@@ -13,6 +13,7 @@ import { cpus } from 'os';
 import path from 'path';
 import { dirname } from 'path';
 import { createRequire } from 'module';
+import logger from '../config/logger.js';
 
 // Solución compatible con Jest y ES modules
 const require = createRequire(import.meta.url);
@@ -56,7 +57,7 @@ class WorkerPool {
         const validatedSize = Math.min(configSize, numCPUs);
 
         if (validatedSize < configSize) {
-            console.warn(`⚠️  Worker pool size (${configSize}) exceeds CPU cores (${numCPUs}). Using ${validatedSize} workers.`);
+            logger.warn({ configSize, cpuCores: numCPUs, usingSize: validatedSize }, 'Worker pool size exceeds CPU cores');
         }
 
         return Math.max(1, validatedSize);
@@ -72,7 +73,7 @@ class WorkerPool {
             return;
         }
 
-        console.log(`🚀 Initializing worker pool with ${this.size} workers (${cpus().length} CPU cores available)`);
+        logger.info({ workers: this.size, cpuCores: cpus().length }, 'Initializing worker pool');
 
         const workerPromises = [];
 
@@ -84,7 +85,7 @@ class WorkerPool {
         await Promise.all(workerPromises);
         this.isInitialized = true;
 
-        console.log(`✅ Worker pool initialized: ${this.workers.length} workers ready`);
+        logger.info({ workers: this.workers.length }, 'Worker pool initialized');
     }
 
     /**
@@ -110,13 +111,13 @@ class WorkerPool {
             });
 
             worker.on('error', (error) => {
-                console.error(`❌ Worker ${id} error:`, error);
+                logger.error({ err: error, workerId: id }, 'Worker error');
                 reject(error);
             });
 
             worker.on('exit', (code) => {
                 if (code !== 0) {
-                    console.error(`❌ Worker ${id} exited with code ${code}`);
+                    logger.error({ workerId: id, exitCode: code }, 'Worker exited with error code');
                 }
             });
 
@@ -276,7 +277,7 @@ class WorkerPool {
             await this.waitForCompletion();
         }
 
-        console.log(`🛑 Terminating worker pool (${this.workers.length} workers)...`);
+        logger.info({ workers: this.workers.length }, 'Terminating worker pool');
 
         const terminationPromises = this.workers.map(async (worker) => {
             await worker.terminate();
@@ -289,7 +290,7 @@ class WorkerPool {
         this.taskQueue = [];
         this.isInitialized = false;
 
-        console.log('✅ Worker pool terminated');
+        logger.info('Worker pool terminated');
     }
 }
 

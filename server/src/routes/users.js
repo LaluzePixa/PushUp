@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticateToken, authorizeRoles, authorizeOwnerOrAdmin, hashPassword } from '../middleware/auth.js';
 import logger from '../config/logger.js';
+import { sanitizeForLike } from '../utils/sanitize.js';
 
 const router = express.Router();
 
@@ -43,8 +44,9 @@ router.get('/', authenticateToken, authorizeRoles('admin', 'superadmin'), async 
 
     // Búsqueda por email
     if (search) {
+      const sanitized = sanitizeForLike(search);
       whereConditions.push(`email ILIKE $${paramCounter}`);
-      queryParams.push(`%${search}%`);
+      queryParams.push(`%${sanitized}%`);
       paramCounter++;
     }
 
@@ -94,7 +96,7 @@ router.get('/', authenticateToken, authorizeRoles('admin', 'superadmin'), async 
     });
 
   } catch (error) {
-    console.error('[Users List Error]', error);
+    logger.error({ err: error }, 'Users list error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -142,7 +144,7 @@ router.get('/:id', authenticateToken, authorizeOwnerOrAdmin, async (req, res) =>
     });
 
   } catch (error) {
-    console.error('[User Get Error]', error);
+    logger.error({ err: error }, 'User get error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -319,7 +321,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[User Update Error]', error);
+    logger.error({ err: error }, 'User update error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -375,7 +377,7 @@ router.delete('/:id', authenticateToken, authorizeRoles('superadmin'), async (re
     });
 
   } catch (error) {
-    console.error('[User Delete Error]', error);
+    logger.error({ err: error }, 'User delete error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
@@ -417,7 +419,7 @@ router.get('/:id/subscriptions', authenticateToken, authorizeOwnerOrAdmin, async
     });
 
   } catch (error) {
-    console.error('[User Subscriptions Error]', error);
+    logger.error({ err: error }, 'User subscriptions error');
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'

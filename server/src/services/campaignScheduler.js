@@ -1,5 +1,6 @@
 import { CronJob } from 'cron';
 import webpush from 'web-push';
+import logger from '../config/logger.js';
 
 class CampaignScheduler {
   constructor(pool) {
@@ -23,7 +24,7 @@ class CampaignScheduler {
     if (!this.isRunning) {
       this.checkScheduledCampaigns.start();
       this.isRunning = true;
-      console.log('[Campaign Scheduler] Iniciado ✅');
+      logger.info('Campaign scheduler started');
       
       // Cargar campañas programadas existentes al iniciar
       this.loadScheduledCampaigns();
@@ -39,7 +40,7 @@ class CampaignScheduler {
       this.scheduledJobs.clear();
       
       this.isRunning = false;
-      console.log('[Campaign Scheduler] Detenido ❌');
+      logger.info('Campaign scheduler stopped');
     }
   }
   
@@ -56,10 +57,10 @@ class CampaignScheduler {
         this.scheduleCampaign(campaign.id, new Date(campaign.scheduled_at));
       }
       
-      console.log(`[Campaign Scheduler] Cargadas ${result.rows.length} campañas programadas`);
+      logger.info({ count: result.rows.length }, 'Loaded scheduled campaigns');
       
     } catch (error) {
-      console.error('[Campaign Scheduler] Error al cargar campañas programadas:', error);
+      logger.error({ err: error }, 'Error loading scheduled campaigns');
     }
   }
   
@@ -80,7 +81,7 @@ class CampaignScheduler {
             await this.executeCampaign(campaignId);
             this.scheduledJobs.delete(campaignId);
           } catch (error) {
-            console.error(`[Campaign Scheduler] Error ejecutando campaña ${campaignId}:`, error);
+            logger.error({ err: error, campaignId }, 'Error executing scheduled campaign');
           }
         },
         null,
@@ -89,10 +90,10 @@ class CampaignScheduler {
       
       this.scheduledJobs.set(campaignId, job);
       
-      console.log(`[Campaign Scheduler] Campaña ${campaignId} programada para ${scheduledDate.toISOString()}`);
+      logger.info({ campaignId, scheduledDate: scheduledDate.toISOString() }, 'Campaign scheduled');
       
     } catch (error) {
-      console.error(`[Campaign Scheduler] Error programando campaña ${campaignId}:`, error);
+      logger.error({ err: error, campaignId }, 'Error scheduling campaign');
     }
   }
   
@@ -101,7 +102,7 @@ class CampaignScheduler {
     if (this.scheduledJobs.has(campaignId)) {
       this.scheduledJobs.get(campaignId).stop();
       this.scheduledJobs.delete(campaignId);
-      console.log(`[Campaign Scheduler] Cancelada programación de campaña ${campaignId}`);
+      logger.info({ campaignId }, 'Campaign schedule cancelled');
     }
   }
   
@@ -115,12 +116,12 @@ class CampaignScheduler {
       );
       
       for (const campaign of result.rows) {
-        console.log(`[Campaign Scheduler] Ejecutando campaña atrasada ${campaign.id}`);
+        logger.info({ campaignId: campaign.id }, 'Executing overdue campaign');
         await this.executeCampaign(campaign.id);
       }
       
     } catch (error) {
-      console.error('[Campaign Scheduler] Error procesando campañas programadas:', error);
+      logger.error({ err: error }, 'Error processing scheduled campaigns');
     }
   }
   
@@ -145,7 +146,7 @@ class CampaignScheduler {
       );
       
       if (campaignResult.rows.length === 0) {
-        console.log(`[Campaign Scheduler] Campaña ${campaignId} no encontrada o ya enviada`);
+        logger.info({ campaignId }, 'Campaign not found or already sent');
         await client.query('COMMIT');
         return;
       }
@@ -188,7 +189,7 @@ class CampaignScheduler {
           ['sent', campaignId]
         );
         await client.query('COMMIT');
-        console.log(`[Campaign Scheduler] Campaña ${campaignId} completada sin suscripciones objetivo`);
+        logger.info({ campaignId }, 'Campaign completed with no target subscriptions');
         return;
       }
       
@@ -279,7 +280,7 @@ class CampaignScheduler {
       
       await client.query('COMMIT');
       
-      console.log(`[Campaign Scheduler] Campaña ${campaignId} ejecutada: ${totalSent} enviadas, ${totalFailed} fallidas`);
+      logger.info({ campaignId, sent: totalSent, failed: totalFailed }, 'Campaign executed');
       
     } catch (error) {
       await client.query('ROLLBACK');
@@ -291,10 +292,10 @@ class CampaignScheduler {
           ['failed', campaignId]
         );
       } catch (updateError) {
-        console.error(`[Campaign Scheduler] Error actualizando estado de campaña ${campaignId}:`, updateError);
+        logger.error({ err: updateError, campaignId }, 'Error updating campaign status');
       }
       
-      console.error(`[Campaign Scheduler] Error ejecutando campaña ${campaignId}:`, error);
+      logger.error({ err: error, campaignId }, 'Error executing campaign');
       throw error;
       
     } finally {
