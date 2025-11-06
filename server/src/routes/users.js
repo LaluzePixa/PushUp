@@ -1,5 +1,6 @@
 import express from 'express';
 import { authenticateToken, authorizeRoles, authorizeOwnerOrAdmin, hashPassword } from '../middleware/auth.js';
+import logger from '../config/logger.js';
 
 const router = express.Router();
 

@@ -1,44 +1,102 @@
-services:
-  api:
-    build: ./server
-    container_name: pushsaas_api
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./server/.env
-    depends_on:
-      - db
+version: '3.8'
 
+services:
+  # PostgreSQL Database
   db:
     image: postgres:16-alpine
     container_name: pushsaas_db
     environment:
-      POSTGRES_USER: pushsaas
-      POSTGRES_PASSWORD: pushsaas
-      POSTGRES_DB: pushsaas
+      POSTGRES_USER: ${DB_USER:-pushsaas}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pushsaas_secure_password_change_me}
+      POSTGRES_DB: ${DB_NAME:-pushsaas}
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pushsaas} -d ${DB_NAME:-pushsaas}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - pushsaas-network
 
+  # API Server
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: pushsaas_api
+    ports:
+      - "${API_PORT:-3000}:3000"
+    env_file:
+      - ./server/.env
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${DB_USER:-pushsaas}:${DB_PASSWORD:-pushsaas_secure_password_change_me}@db:5432/${DB_NAME:-pushsaas}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/healthz', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - pushsaas-network
+
+  # Frontend (Next.js)
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: pushsaas_frontend
     ports:
-      - "8080:80"
+      - "${FRONTEND_PORT:-8080}:3001"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:${API_PORT:-3000}
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - pushsaas-network
 
-  # Legacy client for backward compatibility
+  # Legacy Client (for backward compatibility)
   client:
     image: nginx:alpine
     container_name: pushsaas_client_legacy
     ports:
-      - "8081:80"
+      - "${CLIENT_PORT:-8081}:80"
     volumes:
       - ./client:/usr/share/nginx/html:ro
     depends_on:
       - api
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - pushsaas-network
+
+networks:
+  pushsaas-network:
+    driver: bridge
 
 volumes:
   pgdata:
+    driver: local

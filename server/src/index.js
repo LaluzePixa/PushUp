@@ -1,4 +1,9 @@
 import 'dotenv/config';
+
+// Validate environment variables BEFORE anything else
+import { validateEnv, getEnvInfo } from './config/validateEnv.js';
+validateEnv();
+
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
@@ -93,7 +98,26 @@ app.use(cors({
 app.use(express.static('public'));
 
 const { Pool } = pg;
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+// Database pool configuration with limits
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: parseInt(process.env.DB_POOL_MAX) || 20,          // Maximum connections
+  min: parseInt(process.env.DB_POOL_MIN) || 5,           // Minimum connections
+  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT) || 30000,  // 30s
+  connectionTimeoutMillis: parseInt(process.env.DB_CONNECT_TIMEOUT) || 5000, // 5s
+});
+
+// Handle pool errors
+pool.on('error', (err) => {
+  logger.error({ err }, 'Unexpected database pool error');
+  // Don't exit process - let the app continue with remaining connections
+});
+
+// Log pool connection
+pool.on('connect', () => {
+  logger.debug('New database connection established');
+});
 
 // Hacer disponible el pool de conexiones en toda la app
 app.locals.pool = pool;
