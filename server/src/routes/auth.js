@@ -158,7 +158,7 @@ router.post('/register', async (req, res) => {
 
       // Generar JWT
       const token = signJWT({
-        userId: newUser.id,
+        id: newUser.id,
         email: newUser.email,
         role: newUser.role
       });
@@ -241,7 +241,7 @@ router.post('/login', async (req, res) => {
 
     // Generar JWT
     const token = signJWT({
-      userId: user.id,
+      id: user.id,
       email: user.email,
       role: user.role
     });

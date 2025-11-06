@@ -2,8 +2,29 @@ import express from 'express';
 import { CronJob } from 'cron';
 import webpush from 'web-push';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
+import { getWorkerPool } from '../services/worker-pool.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const router = express.Router();
+
+// Configuración del worker pool desde .env
+const WORKER_POOL_SIZE = parseInt(process.env.WORKER_POOL_SIZE) || 0; // 0 = auto-detect
+const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY) || 2;
+const NOTIFICATION_BATCH_SIZE = parseInt(process.env.NOTIFICATION_BATCH_SIZE) || 1000;
+
+// Inicializar el worker pool (lazy initialization)
+let workerPool = null;
+const getOrCreateWorkerPool = () => {
+  if (!workerPool) {
+    workerPool = getWorkerPool({
+      size: WORKER_POOL_SIZE,
+      concurrency: WORKER_CONCURRENCY
+    });
+  }
+  return workerPool;
+};
 
 // Mapa para almacenar trabajos programados en memoria
 const scheduledJobs = new Map();
@@ -147,56 +168,113 @@ const executeCampaign = async (pool, campaignId) => {
       }
     };
 
-    // Enviar notificaciones
+    // Obtener VAPID keys para los workers
+    const vapidKeys = {
+      publicKey: process.env.VAPID_PUBLIC_KEY,
+      privateKey: process.env.VAPID_PRIVATE_KEY
+    };
+
+    // ========================================
+    // WORKER THREADS PARALLEL PROCESSING
+    // ========================================
     let totalSent = 0;
     let totalFailed = 0;
-    const executionPromises = subscriptions.map(async (subscription) => {
-      try {
-        const pushSubscription = {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: subscription.p256dh,
-            auth: subscription.auth
-          }
-        };
+    let totalExpired = 0;
+    const batchSize = NOTIFICATION_BATCH_SIZE;
+    const batches = Math.ceil(subscriptions.length / batchSize);
 
-        await webpush.sendNotification(
-          pushSubscription,
-          JSON.stringify(notificationPayload)
+    console.log(`[Campaign ${campaignId}] 🚀 Sending to ${subscriptions.length} subscribers in ${batches} batches using worker pool`);
+
+    const startSendTime = Date.now();
+    const workerPool = getOrCreateWorkerPool();
+
+    // Inicializar el pool si no está listo
+    if (!workerPool.isInitialized) {
+      await workerPool.initialize();
+    }
+
+    // Crear tareas para el worker pool (procesamiento paralelo)
+    const workerTasks = [];
+    for (let i = 0; i < subscriptions.length; i += batchSize) {
+      const batch = subscriptions.slice(i, i + batchSize);
+
+      workerTasks.push({
+        subscriptions: batch,
+        payload: notificationPayload,
+        vapidKeys,
+        campaignId
+      });
+    }
+
+    // Ejecutar todas las tareas en paralelo usando el worker pool
+    console.log(`[Campaign ${campaignId}] 📤 Distributing ${workerTasks.length} tasks across ${workerPool.size} workers`);
+
+    const workerResults = await workerPool.executeMany(workerTasks);
+
+    // Consolidar resultados de todos los workers
+    const allExecutions = [];
+    const expiredSubscriptionIds = [];
+
+    for (const result of workerResults) {
+      totalSent += result.totalSent;
+      totalFailed += result.totalFailed;
+      totalExpired += result.totalExpired;
+      allExecutions.push(...result.executions);
+
+      // Recopilar IDs de suscripciones expiradas
+      expiredSubscriptionIds.push(
+        ...result.executions
+          .filter(e => e.status === 'expired')
+          .map(e => e.subscriptionId)
+      );
+    }
+
+    const sendDuration = Date.now() - startSendTime;
+    const throughput = (subscriptions.length / (sendDuration / 1000)).toFixed(2);
+
+    console.log(`[Campaign ${campaignId}] ✅ Sending completed in ${(sendDuration / 1000).toFixed(2)}s`);
+    console.log(`[Campaign ${campaignId}] 📊 Throughput: ${throughput} notifications/second`);
+    console.log(`[Campaign ${campaignId}] 📈 Stats: ${totalSent} sent, ${totalFailed} failed, ${totalExpired} expired`);
+
+    // ========================================
+    // BULK DATABASE OPERATIONS
+    // ========================================
+
+    // Insertar todos los resultados en la BD de forma eficiente (bulk insert)
+    if (allExecutions.length > 0) {
+      const values = [];
+      const params = [];
+      let paramIndex = 1;
+
+      for (const exec of allExecutions) {
+        values.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, NOW())`);
+        params.push(
+          exec.campaignId,
+          exec.subscriptionId,
+          exec.endpoint,
+          exec.status,
+          exec.error || null
         );
+        paramIndex += 5;
+      }
 
-        // Registrar ejecución exitosa
-        await client.query(
-          `INSERT INTO campaign_executions (campaign_id, subscription_id, endpoint, status, sent_at)
-           VALUES ($1, $2, $3, $4, NOW())`,
-          [campaignId, subscription.id, subscription.endpoint, 'sent']
-        );
-
-        totalSent++;
-        return { status: 'success', endpoint: subscription.endpoint };
-
-      } catch (error) {
-        totalFailed++;
-        let status = 'failed';
-
-        // Si la suscripción expiró, eliminarla
-        if (error.statusCode === 410 || error.statusCode === 404) {
-          await client.query('DELETE FROM subscriptions WHERE id = $1', [subscription.id]);
-          status = 'expired';
-        }
-
-        // Registrar ejecución fallida
+      if (values.length > 0) {
         await client.query(
           `INSERT INTO campaign_executions (campaign_id, subscription_id, endpoint, status, error_message, sent_at)
-           VALUES ($1, $2, $3, $4, $5, NOW())`,
-          [campaignId, subscription.id, subscription.endpoint, status, error.message]
+           VALUES ${values.join(', ')}`,
+          params
         );
-
-        return { status: 'error', endpoint: subscription.endpoint, error: error.message };
       }
-    });
 
-    await Promise.allSettled(executionPromises);
+      // Eliminar suscripciones expiradas en batch
+      if (expiredSubscriptionIds.length > 0) {
+        await client.query(
+          `DELETE FROM subscriptions WHERE id = ANY($1)`,
+          [expiredSubscriptionIds]
+        );
+        console.log(`[Campaign ${campaignId}] 🗑️  Removed ${expiredSubscriptionIds.length} expired subscriptions`);
+      }
+    }
 
     // Actualizar estadísticas de la campaña
     await client.query(

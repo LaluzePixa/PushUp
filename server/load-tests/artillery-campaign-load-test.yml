@@ -1,0 +1,287 @@
+# Artillery Load Test for Campaign API
+# This configuration simulates production-level traffic for campaign sending
+# 
+# Usage:
+#   npm install -g artillery
+#   artillery run artillery-campaign-load-test.yml
+#   artillery run artillery-campaign-load-test.yml --output report.json
+#   artillery report report.json --output report.html
+
+config:
+  target: "http://localhost:3000"
+  # Test phases simulate realistic traffic patterns
+  phases:
+    # Warm-up phase - gradually increase load
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    
+    # Ramp-up phase - increase to target load
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up to normal load"
+    
+    # Sustained load phase - maintain high traffic
+    - duration: 300
+      arrivalRate: 50
+      name: "Sustained load"
+    
+    # Spike phase - simulate sudden traffic increase
+    - duration: 60
+      arrivalRate: 100
+      name: "Traffic spike"
+    
+    # Cool down phase
+    - duration: 60
+      arrivalRate: 10
+      name: "Cool down"
+
+  # HTTP settings
+  http:
+    timeout: 120 # 2 minutes timeout for large campaigns
+    pool: 50 # Connection pool size
+  
+  # Variables for dynamic data
+  variables:
+    campaignName:
+      - "Black Friday Sale"
+      - "New Product Launch"
+      - "Special Offer"
+      - "Important Update"
+      - "Flash Sale"
+
+# Test scenarios
+scenarios:
+  # Scenario 1: Create and send campaign to small audience
+  - name: "Create Campaign - Small Audience (1K users)"
+    weight: 50
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ $randomEmail() }}"
+            password: "testpassword123"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      - think: 2
+      
+      - post:
+          url: "/campaigns"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "{{ campaignName }} - Small"
+            title: "Special Announcement"
+            body: "Don't miss our latest update!"
+            siteId: 1
+            sendType: "immediate"
+            clickUrl: "https://example.com/campaign"
+          capture:
+            - json: "$.campaign.id"
+              as: "campaignId"
+      
+      - think: 1
+      
+      # Check campaign status
+      - get:
+          url: "/campaigns/{{ campaignId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+  # Scenario 2: Create campaign for medium audience
+  - name: "Create Campaign - Medium Audience (10K users)"
+    weight: 30
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "admin@example.com"
+            password: "adminpassword"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      - think: 2
+      
+      - post:
+          url: "/campaigns"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "{{ campaignName }} - Medium"
+            title: "Important Update"
+            body: "We have something exciting to share with you!"
+            siteId: 2
+            sendType: "immediate"
+            iconUrl: "https://example.com/icon.png"
+            clickUrl: "https://example.com/update"
+          capture:
+            - json: "$.campaign.id"
+              as: "campaignId"
+            - json: "$.execution.sent"
+              as: "sentCount"
+
+  # Scenario 3: Create scheduled campaign
+  - name: "Create Scheduled Campaign"
+    weight: 10
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "admin@example.com"
+            password: "adminpassword"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      - post:
+          url: "/campaigns"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "Scheduled {{ campaignName }}"
+            title: "Upcoming Event"
+            body: "Mark your calendar for our upcoming event!"
+            siteId: 1
+            sendType: "scheduled"
+            scheduledAt: "2025-11-10T12:00:00Z"
+            clickUrl: "https://example.com/event"
+
+  # Scenario 4: List and filter campaigns
+  - name: "List Campaigns"
+    weight: 5
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "admin@example.com"
+            password: "adminpassword"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      - get:
+          url: "/campaigns?page=1&limit=20"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - think: 1
+      
+      - get:
+          url: "/campaigns?status=sent&page=1&limit=50"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+
+  # Scenario 5: Create campaign with large audience (100K+ users)
+  - name: "Create Campaign - Large Audience (100K+ users)"
+    weight: 5
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "admin@example.com"
+            password: "adminpassword"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      - think: 3
+      
+      - post:
+          url: "/campaigns"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "{{ campaignName }} - Large Scale"
+            title: "Major Announcement"
+            body: "This is a critical update for all our users"
+            siteId: 3
+            sendType: "immediate"
+            iconUrl: "https://example.com/icon.png"
+            imageUrl: "https://example.com/hero.jpg"
+            clickUrl: "https://example.com/announcement"
+          capture:
+            - json: "$.campaign.id"
+              as: "largeCampaignId"
+      
+      # Monitor large campaign
+      - loop:
+          - get:
+              url: "/campaigns/{{ largeCampaignId }}"
+              headers:
+                Authorization: "Bearer {{ authToken }}"
+          - think: 5
+        count: 3
+
+  # Scenario 6: Concurrent campaign creation (stress test)
+  - name: "Concurrent Campaign Creation"
+    weight: 3
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "admin@example.com"
+            password: "adminpassword"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      # Create multiple campaigns in quick succession
+      - parallel:
+          - post:
+              url: "/campaigns"
+              headers:
+                Authorization: "Bearer {{ authToken }}"
+              json:
+                name: "Concurrent Test 1"
+                title: "Test 1"
+                body: "Testing concurrent creation"
+                siteId: 1
+                sendType: "immediate"
+          
+          - post:
+              url: "/campaigns"
+              headers:
+                Authorization: "Bearer {{ authToken }}"
+              json:
+                name: "Concurrent Test 2"
+                title: "Test 2"
+                body: "Testing concurrent creation"
+                siteId: 2
+                sendType: "immediate"
+          
+          - post:
+              url: "/campaigns"
+              headers:
+                Authorization: "Bearer {{ authToken }}"
+              json:
+                name: "Concurrent Test 3"
+                title: "Test 3"
+                body: "Testing concurrent creation"
+                siteId: 3
+                sendType: "immediate"
+
+  # Scenario 7: Error handling - invalid data
+  - name: "Error Handling - Invalid Data"
+    weight: 2
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "admin@example.com"
+            password: "adminpassword"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      # Try to create campaign with missing required fields
+      - post:
+          url: "/campaigns"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: ""
+            title: ""

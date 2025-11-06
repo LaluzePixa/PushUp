@@ -70,8 +70,8 @@ const MockDashboard = () => {
 
   const switchSite = async (siteId: number) => {
     setLoading(true);
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Simulate API delay - make it a bit longer for testing
+    await new Promise(resolve => setTimeout(resolve, 150));
     const site = mockSites.find(s => s.id === siteId);
     if (site) {
       setSelectedSite(site);
@@ -116,7 +116,9 @@ describe('Multi-Site Switching Integration', () => {
     it('should display initial site correctly', () => {
       render(<MockDashboard />);
 
-      expect(screen.getByText('Tech Blog')).toBeInTheDocument();
+      // Use specific testid to avoid ambiguity with button text
+      const currentSite = screen.getByTestId('current-site');
+      expect(currentSite.querySelector('h1')).toHaveTextContent('Tech Blog');
       expect(screen.getByTestId('site-domain')).toHaveTextContent('techblog.com');
       expect(screen.getByTestId('subscriber-count')).toHaveTextContent('1500 subscribers');
       expect(screen.getByTestId('campaign-count')).toHaveTextContent('10 campaigns');
@@ -138,14 +140,16 @@ describe('Multi-Site Switching Integration', () => {
       const user = userEvent.setup();
       render(<MockDashboard />);
 
-      // Initially showing Tech Blog
-      expect(screen.getByText('Tech Blog')).toBeInTheDocument();
+      // Initially showing Tech Blog - use testid to avoid ambiguity
+      const currentSite = screen.getByTestId('current-site');
+      expect(currentSite.querySelector('h1')).toHaveTextContent('Tech Blog');
 
       // Switch to E-commerce Store
       await user.click(screen.getByTestId('switch-to-site-2'));
 
       await waitFor(() => {
-        expect(screen.getByText('E-commerce Store')).toBeInTheDocument();
+        const updatedCurrentSite = screen.getByTestId('current-site');
+        expect(updatedCurrentSite.querySelector('h1')).toHaveTextContent('E-commerce Store');
       });
 
       expect(screen.getByTestId('site-domain')).toHaveTextContent('store.com');
@@ -197,9 +201,15 @@ describe('Multi-Site Switching Integration', () => {
         const site = mockSites[i];
         await user.click(screen.getByTestId(`switch-to-site-${site.id}`));
 
+        // Wait for loading to finish
         await waitFor(() => {
-          expect(screen.getByText(site.name)).toBeInTheDocument();
-        });
+          expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+        }, { timeout: 2000 });
+
+        await waitFor(() => {
+          const currentSite = screen.getByTestId('current-site');
+          expect(currentSite.querySelector('h1')).toHaveTextContent(site.name);
+        }, { timeout: 2000 });
 
         expect(screen.getByTestId('site-domain')).toHaveTextContent(site.domain);
         expect(screen.getByTestId('subscriber-count')).toHaveTextContent(
@@ -216,12 +226,14 @@ describe('Multi-Site Switching Integration', () => {
       for (let i = 0; i < 3; i++) {
         await user.click(screen.getByTestId('switch-to-site-2'));
         await waitFor(() => {
-          expect(screen.getByText('E-commerce Store')).toBeInTheDocument();
+          const currentSite = screen.getByTestId('current-site');
+          expect(currentSite.querySelector('h1')).toHaveTextContent('E-commerce Store');
         });
 
         await user.click(screen.getByTestId('switch-to-site-1'));
         await waitFor(() => {
-          expect(screen.getByText('Tech Blog')).toBeInTheDocument();
+          const currentSite = screen.getByTestId('current-site');
+          expect(currentSite.querySelector('h1')).toHaveTextContent('Tech Blog');
         });
       }
 
@@ -246,9 +258,17 @@ describe('Multi-Site Switching Integration', () => {
       for (const [siteId, expectedCount] of Object.entries(expectedCounts)) {
         await user.click(screen.getByTestId(`switch-to-site-${siteId}`));
 
+        // Wait for loading to finish
         await waitFor(() => {
+          expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+        }, { timeout: 2000 });
+
+        await waitFor(() => {
+          const currentSite = screen.getByTestId('current-site');
+          const siteName = mockSites.find(s => s.id === parseInt(siteId))?.name;
+          expect(currentSite.querySelector('h1')).toHaveTextContent(siteName || '');
           expect(screen.getByTestId('subscriber-count')).toHaveTextContent(expectedCount);
-        });
+        }, { timeout: 2000 });
       }
     });
 
@@ -267,9 +287,17 @@ describe('Multi-Site Switching Integration', () => {
       for (const [siteId, expectedCount] of Object.entries(expectedCounts)) {
         await user.click(screen.getByTestId(`switch-to-site-${siteId}`));
 
+        // Wait for loading to finish
         await waitFor(() => {
+          expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+        }, { timeout: 2000 });
+
+        await waitFor(() => {
+          const currentSite = screen.getByTestId('current-site');
+          const siteName = mockSites.find(s => s.id === parseInt(siteId))?.name;
+          expect(currentSite.querySelector('h1')).toHaveTextContent(siteName || '');
           expect(screen.getByTestId('campaign-count')).toHaveTextContent(expectedCount);
-        });
+        }, { timeout: 2000 });
       }
     });
 
@@ -318,14 +346,28 @@ describe('Multi-Site Switching Integration', () => {
 
       // Switch multiple times
       await user.click(screen.getByTestId('switch-to-site-2'));
+
+      // Wait for loading to finish
       await waitFor(() => {
-        expect(screen.getByText('E-commerce Store')).toBeInTheDocument();
-      });
+        expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+      }, { timeout: 2000 });
+
+      await waitFor(() => {
+        const currentSite = screen.getByTestId('current-site');
+        expect(currentSite.querySelector('h1')).toHaveTextContent('E-commerce Store');
+      }, { timeout: 2000 });
 
       await user.click(screen.getByTestId('switch-to-site-4'));
+
+      // Wait for loading to finish
       await waitFor(() => {
-        expect(screen.getByText('Community Forum')).toBeInTheDocument();
-      });
+        expect(screen.queryByTestId('loading')).not.toBeInTheDocument();
+      }, { timeout: 2000 });
+
+      await waitFor(() => {
+        const currentSite = screen.getByTestId('current-site');
+        expect(currentSite.querySelector('h1')).toHaveTextContent('Community Forum');
+      }, { timeout: 2000 });
 
       // Site switcher should still show all 5 sites
       expect(screen.getByTestId('site-stats')).toHaveTextContent('Total Sites: 5');
@@ -347,7 +389,8 @@ describe('Multi-Site Switching Integration', () => {
         expect(screen.getByTestId('subscriber-count')).toHaveTextContent('12000 subscribers');
       }, { timeout: 3000 });
 
-      expect(screen.getByText('News Portal')).toBeInTheDocument();
+      const currentSite = screen.getByTestId('current-site');
+      expect(currentSite.querySelector('h1')).toHaveTextContent('News Portal');
     });
 
     it('should complete site switch within reasonable time', async () => {
@@ -379,12 +422,14 @@ describe('Multi-Site Switching Integration', () => {
       // Switch sites multiple times
       await user.click(screen.getByTestId('switch-to-site-2'));
       await waitFor(() => {
-        expect(screen.getByText('E-commerce Store')).toBeInTheDocument();
+        const currentSite = screen.getByTestId('current-site');
+        expect(currentSite.querySelector('h1')).toHaveTextContent('E-commerce Store');
       });
 
       await user.click(screen.getByTestId('switch-to-site-3'));
       await waitFor(() => {
-        expect(screen.getByText('News Portal')).toBeInTheDocument();
+        const currentSite = screen.getByTestId('current-site');
+        expect(currentSite.querySelector('h1')).toHaveTextContent('News Portal');
       });
 
       // Container should be the same (no page reload)
@@ -399,7 +444,8 @@ describe('Multi-Site Switching Integration', () => {
 
       await waitFor(() => {
         // Both the name and domain should be visible
-        expect(screen.getByText('Community Forum')).toBeInTheDocument();
+        const currentSite = screen.getByTestId('current-site');
+        expect(currentSite.querySelector('h1')).toHaveTextContent('Community Forum');
         expect(screen.getByTestId('site-domain')).toHaveTextContent('forum.com');
       });
     });

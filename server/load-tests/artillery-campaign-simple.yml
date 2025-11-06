@@ -1,0 +1,75 @@
+# Artillery Load Test for Campaign API - Simplified Version
+# No custom functions, no plugins - just pure load testing
+
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    
+    - duration: 120
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up to normal load"
+    
+    - duration: 300
+      arrivalRate: 50
+      name: "Sustained load"
+    
+    - duration: 60
+      arrivalRate: 100
+      name: "Traffic spike"
+    
+    - duration: 60
+      arrivalRate: 10
+      name: "Cool down"
+
+  http:
+    timeout: 120
+    pool: 50
+
+scenarios:
+  - name: "Create and Send Campaign"
+    weight: 70
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "admin@example.com"
+            password: "adminpassword"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      - post:
+          url: "/campaigns"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            name: "Load Test Campaign {{ $randomString() }}"
+            title: "Special Announcement"
+            body: "Don't miss our latest update!"
+            siteId: 1
+            sendType: "immediate"
+            clickUrl: "https://example.com/campaign"
+          capture:
+            - json: "$.campaign.id"
+              as: "campaignId"
+
+  - name: "List Campaigns"
+    weight: 30
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "admin@example.com"
+            password: "adminpassword"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      
+      - get:
+          url: "/campaigns?page=1&limit=20"
+          headers:
+            Authorization: "Bearer {{ authToken }}"

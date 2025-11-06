@@ -18,12 +18,23 @@ const config = {
     // Module file extensions
     moduleFileExtensions: ['js', 'json'],
 
+    // Transform files with Babel (importante para ES modules)
+    transform: {
+        '^.+\\.js$': ['babel-jest', { configFile: './babel.config.cjs' }]
+    },
+
+    // Don't transform node_modules except for ES modules
+    transformIgnorePatterns: [
+        'node_modules/(?!(threads)/)'
+    ],
+
     // Coverage configuration
     collectCoverage: false, // Enable with --coverage flag
     collectCoverageFrom: [
         'src/**/*.js',
         '!src/index.js', // Exclude main entry file
         '!src/**/__tests__/**',
+        '!src/workers/**', // Exclude workers (tested indirectly)
         '!**/node_modules/**'
     ],
     coverageDirectory: 'coverage',
@@ -54,7 +65,10 @@ const config = {
     globalTeardown: '<rootDir>/tests/globalTeardown.js',
 
     // Mock patterns
-    moduleNameMapper: {},
+    moduleNameMapper: {
+        // Usar mock del worker pool en tests
+        '^(.*)\/worker-pool\\.js$': '$1/worker-pool.mock.js'
+    },
 
     // Force exit after tests
     forceExit: true,

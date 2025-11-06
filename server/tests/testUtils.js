@@ -18,9 +18,9 @@ export class TestDatabase {
         if (!globalTestPool) {
             globalTestPool = new Pool({
                 connectionString: process.env.TEST_DATABASE_URL || 'postgresql://postgres:password@localhost:5432/pushsaas_test',
-                max: 5, // Limit max connections
+                max: 20, // Increased for concurrent operations
                 idleTimeoutMillis: 30000,
-                connectionTimeoutMillis: 2000,
+                connectionTimeoutMillis: 5000, // Increased timeout
             });
         }
         this.pool = globalTestPool;
@@ -117,6 +117,51 @@ export class TestDataFactory {
             ]
         );
         return result.rows[0];
+    }
+
+    /**
+     * Bulk insert de suscripciones para tests de alto volumen
+     * Mucho más eficiente que createSubscription individual
+     */
+    async bulkCreateSubscriptions(siteId, count, options = {}) {
+        const batchSize = options.batchSize || 5000; // Insertar 5000 a la vez
+        const batches = Math.ceil(count / batchSize);
+        let totalCreated = 0;
+
+        for (let batch = 0; batch < batches; batch++) {
+            const recordsInBatch = Math.min(batchSize, count - (batch * batchSize));
+            const values = [];
+            const params = [];
+            let paramIndex = 1;
+
+            for (let i = 0; i < recordsInBatch; i++) {
+                const globalIndex = batch * batchSize + i; // Índice global único
+                values.push(`($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4}, $${paramIndex + 5})`);
+                params.push(
+                    `https://fcm.googleapis.com/fcm/send/user-${globalIndex}`,
+                    'test-p256dh-key',
+                    'test-auth-key',
+                    siteId,
+                    `Browser-${globalIndex % 20}`,
+                    `192.168.${Math.floor(globalIndex / 256)}.${globalIndex % 256}`
+                );
+                paramIndex += 6;
+            }
+
+            await this.db.query(
+                `INSERT INTO subscriptions (endpoint, p256dh, auth, site_id, user_agent, ip)
+                 VALUES ${values.join(', ')}`,
+                params
+            );
+
+            totalCreated += recordsInBatch;
+
+            if (options.onProgress && (batch + 1) % 10 === 0) {
+                options.onProgress(totalCreated, count);
+            }
+        }
+
+        return totalCreated;
     }
 
     async createCampaign(userId, campaignData = {}) {
