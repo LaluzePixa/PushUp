@@ -15,7 +15,7 @@ export default function Optinp() {
   const [headline, setHeadline] = useState("");
   const [headlineEnabled, setHeadlineEnabled] = useState(false);
   const [text, setText] = useState("Would you like to receive notifications on latest updates?");
-  const [textEnabled, setTextEnabled] = useState(false);
+  const [textEnabled, setTextEnabled] = useState(true);
   const [cancelButton, setCancelButton] = useState("NOT YET");
   const [cancelBgColor, setCancelBgColor] = useState("#ffffff");
   const [cancelTextColor, setCancelTextColor] = useState("#000000");
@@ -417,7 +417,7 @@ export default function Optinp() {
           </label>
         </div>
 
-        <div className="bg-gray-200 dark:bg-gray-800 p-8 rounded-lg h-96 flex items-center justify-center">
+        <div className="bg-gray-50 dark:bg-gray-900 p-8 rounded-lg h-96 flex items-center justify-center border border-gray-200 dark:border-gray-700">
           {selectedType === "lightbox1" && (
             <div
               className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full"

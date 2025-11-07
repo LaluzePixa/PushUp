@@ -226,9 +226,9 @@ describe('Rate Limiting Security Tests', () => {
                     .post('/auth/register')
                     .set('X-Forwarded-For', ip)
                     .send({
-                        email: \`user\${i}@example.com\`,
+                        email: `user\${i}@example.com`,
                         password: 'Password123!',
-                        fullName: \`User \${i}\`
+                        fullName: `User \${i}`
                     });
 
                 responses.push(response);
@@ -348,7 +348,7 @@ describe('Rate Limiting Security Tests', () => {
                 await request(app)
                     .post('/auth/login')
                     .set('X-Forwarded-For', ip)
-                    .set('User-Agent', \`Browser-\${i}\`)
+                    .set('User-Agent', `Browser-\${i}`)
                     .send({ email: 'test5@example.com', password: 'wrong' });
             }
 
@@ -406,3 +406,4 @@ describe('Rate Limiting Security Tests', () => {
  *    - Timestamp
  *    - User agent
  */
+

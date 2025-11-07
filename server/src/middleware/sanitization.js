@@ -95,13 +95,52 @@ export function sanitizeQueryParams(req, res, next) {
 }
 
 /**
- * Middleware to validate site creation/update data
- * Validates domain format and required fields
+ * Middleware to validate domain BEFORE sanitization
+ * Catches malicious patterns that could be sanitized away
+ */
+export function validateDomainBeforeSanitization(req, res, next) {
+  const { domain } = req.body;
+
+  // Validate domain if provided - check BEFORE any sanitization for security
+  if (domain) {
+    // Check domain BEFORE any sanitization to catch malicious patterns
+    const domainValidation = validateDomain(domain);
+
+    if (!domainValidation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: domainValidation.error || 'Invalid domain format',
+          field: 'domain'
+        }
+      });
+    }
+
+    // Use the sanitized domain
+    req.body.domain = domainValidation.sanitized;
+  } else if (req.method === 'POST') { // Only require domain on creation
+    return res.status(400).json({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Domain is required',
+        field: 'domain'
+      }
+    });
+  }
+
+  next();
+}
+
+/**
+ * Middleware to validate site creation/update data AFTER sanitization
+ * Validates name and required fields after HTML has been stripped
  */
 export function validateSiteData(req, res, next) {
-  const { name, domain } = req.body;
+  const { name } = req.body;
 
-  // Validate name
+  // Validate name (after sanitization)
   if (!name || typeof name !== 'string') {
     return res.status(400).json({
       success: false,
@@ -122,25 +161,6 @@ export function validateSiteData(req, res, next) {
         field: 'name'
       }
     });
-  }
-
-  // Validate domain if provided
-  if (domain) {
-    const domainValidation = validateDomain(domain);
-
-    if (!domainValidation.valid) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: domainValidation.error || 'Invalid domain format',
-          field: 'domain'
-        }
-      });
-    }
-
-    // Use the sanitized domain
-    req.body.domain = domainValidation.sanitized;
   }
 
   next();

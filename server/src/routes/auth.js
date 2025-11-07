@@ -72,7 +72,8 @@ router.post('/register', registerLimiter, async (req, res) => {
     if (!isValidEmail(email)) {
       return res.status(400).json({
         error: 'Email inválido',
-        code: 'INVALID_EMAIL'
+        code: 'VALIDATION_ERROR',
+        details: ['El email no tiene un formato válido']
       });
     }
 
@@ -80,7 +81,8 @@ router.post('/register', registerLimiter, async (req, res) => {
     if (!passwordValidation.valid) {
       return res.status(400).json({
         error: passwordValidation.message,
-        code: 'INVALID_PASSWORD',
+        code: 'VALIDATION_ERROR',
+        details: [passwordValidation.message],
         requirements: {
           minLength: 12,
           uppercase: true,
@@ -112,7 +114,7 @@ router.post('/register', registerLimiter, async (req, res) => {
     if (existingUser.rows.length > 0) {
       return res.status(409).json({
         error: 'El usuario ya existe',
-        code: 'USER_EXISTS'
+        code: 'EMAIL_EXISTS'
       });
     }
 
@@ -229,7 +231,7 @@ router.post('/login', authLimiter, async (req, res) => {
     if (!user.is_active) {
       return res.status(401).json({
         error: 'Usuario desactivado',
-        code: 'USER_DISABLED'
+        code: 'ACCOUNT_INACTIVE'
       });
     }
 

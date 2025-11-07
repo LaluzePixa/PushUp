@@ -141,15 +141,34 @@ export function sanitizeHTML(input, options = {}) {
         li: [],
       },
       stripIgnoreTag: true,
-      stripIgnoreTagBody: ['script', 'style'],
+      stripIgnoreTagBody: ['script', 'style', 'iframe', 'object', 'embed'],
     });
   }
 
-  // Strip ALL HTML tags
-  return validator.stripLow(
-    input.replace(/<[^>]*>/g, ''), // Remove all tags
-    true // Keep newlines
-  );
+  // Strip ALL HTML tags and their content for dangerous tags
+  let sanitized = input;
+
+  // Remove script tags and their content
+  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
+  // Remove style tags and their content
+  sanitized = sanitized.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+
+  // Remove iframe tags and their content
+  sanitized = sanitized.replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
+
+  // Remove all remaining HTML tags (but keep the text content)
+  sanitized = sanitized.replace(/<[^>]*>/g, '');
+
+  // Remove javascript: and data: protocols
+  sanitized = sanitized.replace(/javascript:/gi, '');
+  sanitized = sanitized.replace(/data:/gi, '');
+
+  // Remove on* event handlers
+  sanitized = sanitized.replace(/on\w+\s*=/gi, '');
+
+  // Strip low ASCII characters
+  return validator.stripLow(sanitized, true); // Keep newlines
 }
 
 /**
@@ -194,16 +213,54 @@ export function validateDomain(domain) {
 
   const sanitized = sanitizeInput(domain).toLowerCase();
 
-  // Check for malicious patterns
-  if (sanitized.includes('javascript:') ||
-      sanitized.includes('data:') ||
-      sanitized.includes('vbscript:') ||
-      sanitized.includes('<') ||
-      sanitized.includes('>')) {
+  // Reject empty domains
+  if (!sanitized) {
+    return { valid: false, sanitized: '', error: 'Domain is required' };
+  }
+
+  // Check for malicious patterns FIRST (before any other processing)
+  const maliciousPatterns = [
+    /javascript:/i,
+    /data:/i,
+    /vbscript:/i,
+    /<script/i,
+    /<iframe/i,
+    /<object/i,
+    /<embed/i,
+    /[<>]/,
+    /on\w+=/i, // Event handlers
+    /[\x00-\x1F\x7F]/, // Control characters
+  ];
+
+  for (const pattern of maliciousPatterns) {
+    if (pattern.test(sanitized)) {
+      return {
+        valid: false,
+        sanitized: '',
+        error: 'Domain contains invalid characters'
+      };
+    }
+  }
+
+  // Reject domains that start with protocols
+  if (sanitized.startsWith('http://') ||
+    sanitized.startsWith('https://') ||
+    sanitized.startsWith('ftp://') ||
+    sanitized.startsWith('//')) {
     return {
       valid: false,
       sanitized: '',
-      error: 'Domain contains invalid characters'
+      error: 'Domain should not include protocol'
+    };
+  }
+
+  // Reject IP addresses (we only want domain names)
+  const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+  if (ipPattern.test(sanitized)) {
+    return {
+      valid: false,
+      sanitized: '',
+      error: 'IP addresses are not allowed'
     };
   }
 

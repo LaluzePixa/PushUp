@@ -35,7 +35,7 @@ export const authenticateToken = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         error: 'Token de acceso requerido',
-        code: 'TOKEN_REQUIRED'
+        code: 'NO_TOKEN'
       });
     }
 
@@ -85,13 +85,13 @@ export const authenticateToken = async (req, res, next) => {
     if (error.code === 'FAST_JWT_INVALID_SIGNATURE') {
       return res.status(401).json({
         error: 'Token inválido',
-        code: 'TOKEN_INVALID'
+        code: 'INVALID_TOKEN'
       });
     }
 
     return res.status(401).json({
       error: 'Token inválido',
-      code: 'TOKEN_INVALID'
+      code: 'INVALID_TOKEN'
     });
   }
 };

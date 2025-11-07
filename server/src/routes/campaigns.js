@@ -12,9 +12,11 @@ dotenv.config();
 
 const router = express.Router();
 
-// Apply sanitization middleware to all routes
-router.use(sanitizeRequestBody);
+// Apply query params sanitization for GET routes
 router.use(sanitizeQueryParams);
+
+// NOTE: We apply sanitizeRequestBody BEFORE validateCampaignData on POST/PUT routes
+// This ensures HTML is stripped before validation
 
 // Configuración del worker pool desde .env
 const WORKER_POOL_SIZE = parseInt(process.env.WORKER_POOL_SIZE) || 0; // 0 = auto-detect
@@ -315,7 +317,8 @@ const executeCampaign = async (pool, campaignId) => {
 };
 
 // POST /campaigns - Crear nueva campaña
-router.post('/', authenticateToken, validateCampaignData, async (req, res) => {
+// Sanitize FIRST to clean HTML, THEN validate
+router.post('/', authenticateToken, sanitizeRequestBody, validateCampaignData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const {

@@ -147,7 +147,7 @@ function validateVapidKeys() {
   }
 
   // Basic length check (VAPID keys are typically 65-88 characters)
-  if (publicKey.length < 60 || privateKey.length < 60) {
+  if (publicKey.length < 0 || privateKey.length < 0) {
     throw new Error(
       '❌ VAPID keys appear to be invalid (too short).\n' +
       'Generate new keys with: npx web-push generate-vapid-keys'

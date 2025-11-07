@@ -95,14 +95,11 @@ const MetricCard: React.FC<MetricCardProps> = ({ metricName, className = "" }) =
       <div className="flex items-center justify-center min-h-[120px]">
         {metric.hasData ? (
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary mb-2">
+            <div className="text-3xl font-bold text-primary">
               {typeof metric.data === 'number'
                 ? metric.data.toLocaleString()
                 : metric.data
               }
-            </div>
-            <div className="text-xs text-green-600 dark:text-green-400 font-medium">
-              ✓ Data available
             </div>
           </div>
         ) : (

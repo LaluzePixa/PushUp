@@ -2,13 +2,15 @@ import express from 'express';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
 import logger from '../config/logger.js';
 import { sanitizeForLike } from '../utils/sanitize.js';
-import { sanitizeRequestBody, sanitizeQueryParams, validateSiteData } from '../middleware/sanitization.js';
+import { sanitizeRequestBody, sanitizeQueryParams, validateSiteData, validateDomainBeforeSanitization } from '../middleware/sanitization.js';
 
 const router = express.Router();
 
-// Apply sanitization middleware to all routes
-router.use(sanitizeRequestBody);
+// Apply query params sanitization to GET routes
 router.use(sanitizeQueryParams);
+
+// NOTE: We don't apply sanitizeRequestBody globally here
+// Instead, we apply validation FIRST, then sanitization in POST/PUT routes
 
 // Validación de sitio
 const validateSite = (data) => {
@@ -130,7 +132,8 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // POST /sites - Crear nuevo sitio
-router.post('/', authenticateToken, validateSiteData, async (req, res) => {
+// Order: Auth -> Validate Domain (catches malicious patterns) -> Sanitize (strips HTML) -> Validate Site (checks sanitized data)
+router.post('/', authenticateToken, validateDomainBeforeSanitization, sanitizeRequestBody, validateSiteData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const { name, domain, description } = req.body;
@@ -275,7 +278,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // PUT /sites/:id - Actualizar sitio
-router.put('/:id', authenticateToken, authorizeRoles('admin', 'superadmin'), validateSiteData, async (req, res) => {
+// Same order: Auth -> Roles -> Validate Domain -> Sanitize -> Validate Site
+router.put('/:id', authenticateToken, authorizeRoles('admin', 'superadmin'), validateDomainBeforeSanitization, sanitizeRequestBody, validateSiteData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const siteId = parseInt(req.params.id);

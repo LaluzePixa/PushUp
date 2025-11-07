@@ -69,7 +69,7 @@ describe('Input Sanitization Tests', () => {
 
             for (const payload of sqlInjectionPayloads) {
                 const response = await request(app)
-                    .get(\`/sites/\${payload}\`)
+                    .get(`/sites/\${payload}`)
                     .set(authHeaders);
 
                 // Should return 404 or 400, not cause SQL error
@@ -97,16 +97,16 @@ describe('Input Sanitization Tests', () => {
             const input = 'test%';
             const sanitized = sanitizeForLike(input);
 
-            // % should be escaped to \\%
-            expect(sanitized).toBe('test\\\\%');
+            // % should be escaped to \%
+            expect(sanitized).toBe('test\\%');
         });
 
         test('sanitizeForLike should escape _ wildcard characters', () => {
             const input = 'test_user';
             const sanitized = sanitizeForLike(input);
 
-            // _ should be escaped to \\_
-            expect(sanitized).toBe('test\\\\_user');
+            // _ should be escaped to \_
+            expect(sanitized).toBe('test\\_user');
         });
 
         test('sanitizeForLike should handle empty strings', () => {
@@ -142,7 +142,7 @@ describe('Input Sanitization Tests', () => {
 
     describe('✅ XSS Prevention (Implemented)', () => {
         test('should strip XSS from site name', async () => {
-            const xssPayload = '<script>alert("XSS")</script>';
+            const xssPayload = '<script>alert("XSS")</script>Test Site';
 
             const response = await request(app)
                 .post('/sites')
@@ -152,15 +152,16 @@ describe('Input Sanitization Tests', () => {
                     domain: 'test.com'
                 });
 
-            // Should succeed but with HTML stripped
+            // Should succeed with HTML stripped
             expect(response.status).toBe(201);
             expect(response.body.data.name).not.toContain('<script>');
             expect(response.body.data.name).not.toContain('alert');
+            expect(response.body.data.name).toContain('Test Site'); // Clean text should remain
         });
 
         test('should strip XSS from campaign title', async () => {
             const site = await dataFactory.createSite(testUser.id);
-            const xssPayload = '<img src=x onerror=alert(1)>';
+            const xssPayload = '<img src=x onerror=alert(1)>Campaign Title';
 
             const response = await request(app)
                 .post('/campaigns')
@@ -177,11 +178,12 @@ describe('Input Sanitization Tests', () => {
             expect(response.status).toBe(201);
             expect(response.body.data.title).not.toContain('<img');
             expect(response.body.data.title).not.toContain('onerror');
+            expect(response.body.data.title).toContain('Campaign Title'); // Clean text should remain
         });
 
         test('should strip XSS from campaign body', async () => {
             const site = await dataFactory.createSite(testUser.id);
-            const xssPayload = '<iframe src="evil.com"></iframe>Test';
+            const xssPayload = '<iframe src="evil.com"></iframe>Test message';
 
             const response = await request(app)
                 .post('/campaigns')
@@ -198,6 +200,7 @@ describe('Input Sanitization Tests', () => {
             expect(response.status).toBe(201);
             expect(response.body.data.body).not.toContain('<iframe');
             expect(response.body.data.body).not.toContain('evil.com');
+            expect(response.body.data.body).toContain('Test message'); // Clean text should remain
         });
     });
 
@@ -263,8 +266,8 @@ describe('Input Sanitization Tests', () => {
                 });
 
             expect(response.status).toBe(201);
-            expect(response.body.campaign.title).toContain('🚀');
-            expect(response.body.campaign.body).toContain('😊');
+            expect(response.body.data.title).toContain('🚀');
+            expect(response.body.data.body).toContain('😊');
         });
 
         test('should handle newlines in text content', async () => {
@@ -514,3 +517,4 @@ describe('Input Sanitization Tests', () => {
  *    - Suspicious input patterns logged (XSS, NoSQL operators)
  *    - Includes IP, path, method for security auditing
  */
+

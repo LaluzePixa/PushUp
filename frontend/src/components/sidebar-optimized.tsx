@@ -118,22 +118,7 @@ const mainMenuData = [
             title: "Manual Push",
             url: "/campaigns",
             active: true,
-        }
-            // ⚠️ ITEMS TEMPORALMENTE OCULTOS - Comentados 2025-10-27
-            // {
-            //     title: "Push via API",
-            //     url: "/campaigns/api",
-            //     active: true,
-            // }, {
-            //     title: "Push via WP Plugin",
-            //     url: "/campaigns/wordpress",
-            //     active: true,
-            // }, {
-            //     title: "Journey Builder",
-            //     url: "/journeys",
-            //     active: true,
-            // }
-        ]
+        }]
     },
     {
         title: "Setup",

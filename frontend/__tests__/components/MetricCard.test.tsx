@@ -75,7 +75,6 @@ describe('MetricCard', () => {
       expect(screen.getByText('Total Users')).toBeInTheDocument();
       expect(screen.getByText('Total number of registered users')).toBeInTheDocument();
       expect(screen.getByText('1250')).toBeInTheDocument(); // European format without separators for small numbers
-      expect(screen.getByText('✓ Data available')).toBeInTheDocument();
     });
   });
 
