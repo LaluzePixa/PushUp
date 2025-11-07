@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useSiteContext } from "@/contexts/SiteContext"
+import { toast } from "sonner"
 import {
     Globe,
     Plus,
@@ -42,14 +43,14 @@ export function SiteSelector() {
     // Crear nuevo sitio
     const handleCreateSite = async () => {
         if (!newSiteData.name.trim() || !newSiteData.domain.trim()) {
-            alert('El nombre y dominio son obligatorios');
+            toast.error('El nombre y dominio son obligatorios');
             return;
         }
 
         // Validación básica de dominio
         const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
         if (!domainRegex.test(newSiteData.domain.trim())) {
-            alert('El formato del dominio no es válido. Ejemplo: ejemplo.com');
+            toast.error('El formato del dominio no es válido. Ejemplo: ejemplo.com');
             return;
         }
 
@@ -59,7 +60,7 @@ export function SiteSelector() {
         );
 
         if (domainExists) {
-            alert('Ya tienes un sitio registrado con este dominio');
+            toast.error('Ya tienes un sitio registrado con este dominio');
             return;
         }
 
@@ -74,7 +75,7 @@ export function SiteSelector() {
                 setNewSiteData({ name: '', domain: '', description: '' });
 
                 // Mostrar mensaje de éxito
-                alert(`¡Sitio "${response.data.name}" creado exitosamente!`);
+                toast.success(`¡Sitio "${response.data.name}" creado exitosamente!`);
             }
         } catch (error: unknown) {
             console.error('Error creating site:', error);
@@ -102,8 +103,7 @@ export function SiteSelector() {
                 errorMessage = error.message;
             }
 
-            // TODO: Implementar toast/notification system
-            alert(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setIsCreating(false);
         }

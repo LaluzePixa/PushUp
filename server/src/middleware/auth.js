@@ -1,5 +1,6 @@
 import { createVerifier, createSigner } from 'fast-jwt';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import logger from '../config/logger.js';
 
 // Configuración JWT
@@ -148,8 +149,34 @@ export const hashPassword = async (password) => {
   return await bcrypt.hash(password, saltRounds);
 };
 
+// SECURITY: bcrypt.compare ya es timing-safe, pero esta es una función wrapper explícita
 export const comparePassword = async (password, hash) => {
   return await bcrypt.compare(password, hash);
+};
+
+/**
+ * Timing-safe string comparison
+ * SECURITY: Prevents timing attacks for string comparison (e.g., emails, tokens)
+ * Note: bcrypt.compare() is already timing-safe for password hashes
+ */
+export const timingSafeEqual = (a, b) => {
+  try {
+    // Convert strings to buffers for constant-time comparison
+    const bufferA = Buffer.from(a, 'utf8');
+    const bufferB = Buffer.from(b, 'utf8');
+
+    // If lengths differ, still compare to maintain constant time
+    if (bufferA.length !== bufferB.length) {
+      // Compare with a dummy buffer to maintain timing
+      crypto.timingSafeEqual(bufferA, Buffer.alloc(bufferA.length));
+      return false;
+    }
+
+    return crypto.timingSafeEqual(bufferA, bufferB);
+  } catch (error) {
+    logger.error({ err: error }, 'Error in timingSafeEqual');
+    return false;
+  }
 };
 
 // Middleware opcional para rutas públicas que pueden tener usuario autenticado

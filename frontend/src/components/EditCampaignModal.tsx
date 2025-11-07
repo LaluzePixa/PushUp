@@ -1,16 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { campaignsService, CampaignFormData } from '@/services/api';
+import { campaignsService, Campaign, CampaignFormData } from '@/services/api';
 import { useSiteContext } from '@/contexts/SiteContext';
 
-interface CreateCampaignModalProps {
+interface EditCampaignModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  campaign: Campaign | null;
 }
 
-export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: CreateCampaignModalProps) {
+export default function EditCampaignModal({ isOpen, onClose, onSuccess, campaign }: EditCampaignModalProps) {
   const { selectedSite } = useSiteContext();
   const [formData, setFormData] = useState<CampaignFormData>({
     name: '',
@@ -21,12 +22,30 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
     clickUrl: '',
     badgeUrl: '',
     siteId: selectedSite?.id || undefined,
-    sendType: 'immediate',
+    sendType: 'draft',
     scheduledAt: ''
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Cargar datos de la campaña cuando se abre el modal
+  useEffect(() => {
+    if (campaign && isOpen) {
+      setFormData({
+        name: campaign.name,
+        title: campaign.title,
+        body: campaign.body,
+        iconUrl: campaign.iconUrl || '',
+        imageUrl: campaign.imageUrl || '',
+        clickUrl: campaign.clickUrl || '',
+        badgeUrl: campaign.badgeUrl || '',
+        siteId: campaign.siteId,
+        sendType: campaign.status === 'Scheduled' ? 'scheduled' : 'draft',
+        scheduledAt: campaign.scheduledAt || ''
+      });
+    }
+  }, [campaign, isOpen]);
 
   // Actualizar siteId cuando cambie el sitio seleccionado
   useEffect(() => {
@@ -46,13 +65,24 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
       return;
     }
 
+    if (!campaign) {
+      setError('No se pudo cargar la campaña');
+      return;
+    }
+
     if (!selectedSite) {
-      setError('Debes tener un sitio seleccionado para crear una campaña');
+      setError('Debes tener un sitio seleccionado para editar una campaña');
       return;
     }
 
     if (formData.sendType === 'scheduled' && !formData.scheduledAt) {
       setError('La fecha de programación es requerida para envíos programados');
+      return;
+    }
+
+    // No permitir editar campañas ya enviadas
+    if (campaign.status === 'Success' || campaign.status === 'Error') {
+      toast.error('No se pueden editar campañas que ya fueron enviadas');
       return;
     }
 
@@ -73,31 +103,20 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
         scheduledAt: formData.sendType === 'scheduled' ? formData.scheduledAt : undefined
       };
 
-      console.log('📤 Enviando campaña:', campaignData);
-
-      const response = await campaignsService.createCampaign(campaignData);
-
-      console.log('✅ Respuesta de crear campaña:', response);
+      const response = await campaignsService.updateCampaign(campaign.id, campaignData);
 
       if (response.success) {
         onSuccess();
         onClose();
         resetForm();
-
-        const message = formData.sendType === 'scheduled'
-          ? 'Campaña programada exitosamente'
-          : formData.sendType === 'immediate'
-            ? 'Campaña enviada exitosamente'
-            : 'Campaña creada exitosamente';
-
-        toast.success(message);
+        toast.success('Campaña actualizada exitosamente');
       } else {
-        setError('Error al crear la campaña');
+        setError('Error al actualizar la campaña');
       }
     } catch (err: unknown) {
-      console.error('❌ Error creating campaign:', err);
+      console.error('❌ Error updating campaign:', err);
 
-      let errorMessage = 'Error al crear la campaña';
+      let errorMessage = 'Error al actualizar la campaña';
 
       if (err && typeof err === 'object' && 'status' in err) {
         const apiError = err as { status: number; message?: string };
@@ -106,7 +125,9 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
         } else if (apiError.status === 401) {
           errorMessage = 'No estás autenticado. Por favor, inicia sesión nuevamente.';
         } else if (apiError.status === 403) {
-          errorMessage = 'No tienes permisos para crear campañas.';
+          errorMessage = 'No tienes permisos para editar campañas.';
+        } else if (apiError.status === 404) {
+          errorMessage = 'La campaña no existe o fue eliminada.';
         } else if (apiError.message) {
           errorMessage = `Error: ${apiError.message}`;
         }
@@ -115,6 +136,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
       }
 
       setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -129,14 +151,14 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
       imageUrl: '',
       clickUrl: '',
       badgeUrl: '',
-      siteId: selectedSite?.id, // Mantener el sitio seleccionado
-      sendType: 'immediate',
+      siteId: selectedSite?.id,
+      sendType: 'draft',
       scheduledAt: ''
     });
     setError(null);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !campaign) return null;
 
   // Si no hay sitio seleccionado, mostrar mensaje de error
   if (!selectedSite) {
@@ -147,7 +169,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
             Sitio Requerido
           </h3>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Debes seleccionar un sitio antes de crear una campaña. Por favor, selecciona un sitio desde el selector en la barra lateral.
+            Debes seleccionar un sitio antes de editar una campaña. Por favor, selecciona un sitio desde el selector en la barra lateral.
           </p>
           <div className="flex justify-end">
             <button
@@ -166,8 +188,17 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-[#222] p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">
-          Crear Nueva Campaña
+          Editar Campaña: {campaign.name}
         </h3>
+
+        {/* Warning para campañas enviadas */}
+        {(campaign.status === 'Success' || campaign.status === 'Error') && (
+          <div className="mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4">
+            <p className="text-yellow-800 dark:text-yellow-300 text-sm">
+              ⚠️ Esta campaña ya fue enviada. No se puede editar.
+            </p>
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 bg-red-50 border border-red-200 rounded-md p-4">
@@ -189,6 +220,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
                 placeholder="Ej: Promoción de Verano"
                 required
+                disabled={campaign.status === 'Success' || campaign.status === 'Error'}
               />
             </div>
 
@@ -199,7 +231,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
                   <strong>Sitio:</strong> {selectedSite.name} ({selectedSite.domain})
                 </p>
                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                  La campaña se enviará a los suscriptores de este sitio
+                  Campaña ID: {campaign.id} | Estado: {campaign.status}
                 </p>
               </div>
             )}
@@ -216,6 +248,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
               placeholder="Ej: ¡Nueva promoción disponible!"
               required
+              disabled={campaign.status === 'Success' || campaign.status === 'Error'}
             />
           </div>
 
@@ -230,6 +263,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
               placeholder="Escribe el mensaje de tu notificación push..."
               rows={3}
               required
+              disabled={campaign.status === 'Success' || campaign.status === 'Error'}
             />
           </div>
 
@@ -245,6 +279,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
                 onChange={(e) => setFormData(prev => ({ ...prev, clickUrl: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
                 placeholder="https://ejemplo.com/promocion"
+                disabled={campaign.status === 'Success' || campaign.status === 'Error'}
               />
             </div>
 
@@ -258,48 +293,41 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
                 onChange={(e) => setFormData(prev => ({ ...prev, iconUrl: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
                 placeholder="https://ejemplo.com/icono.png"
+                disabled={campaign.status === 'Success' || campaign.status === 'Error'}
               />
             </div>
           </div>
 
-          {/* Tipo de envío */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Tipo de Envío
-            </label>
-            <div className="space-y-2">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="immediate"
-                  checked={formData.sendType === 'immediate'}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sendType: e.target.value as 'immediate' | 'scheduled' | 'draft' }))}
-                  className="mr-2"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Enviar inmediatamente</span>
+          {/* Tipo de envío - solo para borradores y programadas */}
+          {(campaign.status === 'Pending' || campaign.status === 'Scheduled') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Tipo de Envío
               </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="draft"
-                  checked={formData.sendType === 'draft'}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sendType: e.target.value as 'immediate' | 'scheduled' | 'draft' }))}
-                  className="mr-2"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Guardar como borrador</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="scheduled"
-                  checked={formData.sendType === 'scheduled'}
-                  onChange={(e) => setFormData(prev => ({ ...prev, sendType: e.target.value as 'immediate' | 'scheduled' | 'draft' }))}
-                  className="mr-2"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Programar envío</span>
-              </label>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="draft"
+                    checked={formData.sendType === 'draft'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, sendType: e.target.value as 'immediate' | 'scheduled' | 'draft' }))}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Guardar como borrador</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="scheduled"
+                    checked={formData.sendType === 'scheduled'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, sendType: e.target.value as 'immediate' | 'scheduled' | 'draft' }))}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Programar envío</span>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Fecha de programación */}
           {formData.sendType === 'scheduled' && (
@@ -333,13 +361,10 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || campaign.status === 'Success' || campaign.status === 'Error'}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creando...' :
-                formData.sendType === 'immediate' ? 'Crear y Enviar' :
-                  formData.sendType === 'scheduled' ? 'Programar' :
-                    'Crear Borrador'}
+              {loading ? 'Guardando...' : 'Guardar Cambios'}
             </button>
           </div>
         </form>

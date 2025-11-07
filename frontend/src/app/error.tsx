@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import errorTracking from '@/lib/errorTracking'
 
 /**
  * Global Error Handler for Next.js App Router
@@ -25,8 +26,14 @@ export default function Error({
       console.error('❌ Route Error:', error)
     }
 
-    // TODO: Log to error tracking service (Sentry, LogRocket, etc.)
-    // Example: logErrorToService(error);
+    // Log to error tracking service (Sentry, LogRocket, etc.)
+    errorTracking.captureException(error, {
+      tags: {
+        errorBoundary: 'route-level',
+        digest: error.digest || 'unknown'
+      },
+      level: 'error'
+    });
   }, [error])
 
   return (

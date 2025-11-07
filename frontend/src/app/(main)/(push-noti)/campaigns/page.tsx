@@ -2,9 +2,11 @@
 import InfoCard from "@/components/InfoCard";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, ChevronUp, ChevronDown, Info } from "lucide-react";
+import { toast } from "sonner";
 import { campaignsService, Campaign } from "@/services/api";
 import { useSiteContext } from '@/contexts/SiteContext';
 import CreateCampaignModal from "@/components/CreateCampaignModal";
+import EditCampaignModal from "@/components/EditCampaignModal";
 
 type SortField = 'name' | 'dateCreated' | 'status';
 type SortDirection = 'asc' | 'desc';
@@ -17,6 +19,8 @@ export default function Campaigns() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [pagination, setPagination] = useState({
     current: 1,
     limit: 20,
@@ -103,16 +107,16 @@ export default function Campaigns() {
     try {
       const response = await campaignsService.sendCampaign(campaignId);
       if (response.success) {
-        alert(`Campaña enviada exitosamente. ${response.data?.sent || 0} notificaciones enviadas.`);
+        toast.success(`Campaña enviada exitosamente. ${response.data?.sent || 0} notificaciones enviadas.`);
         // Recargar campañas
         handleCampaignCreated();
       } else {
-        alert('Error al enviar la campaña');
+        toast.error('Error al enviar la campaña');
       }
     } catch (error: unknown) {
       console.error('Error sending campaign:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      alert(`Error al enviar la campaña: ${errorMessage}`);
+      toast.error(`Error al enviar la campaña: ${errorMessage}`);
     }
   };
 
@@ -124,20 +128,20 @@ export default function Campaigns() {
 
     try {
       await campaignsService.deleteCampaign(campaignId);
-      alert('Campaña eliminada exitosamente');
+      toast.success('Campaña eliminada exitosamente');
       // Recargar campañas
       handleCampaignCreated();
     } catch (error: unknown) {
       console.error('Error deleting campaign:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      alert(`Error al eliminar la campaña: ${errorMessage}`);
+      toast.error(`Error al eliminar la campaña: ${errorMessage}`);
     }
   };
 
-  // Función para editar una campaña (por implementar)
-  const handleEditCampaign = () => {
-    alert('Funcionalidad de edición en desarrollo');
-    // TODO: Implementar modal de edición de campaña
+  // Función para editar una campaña
+  const handleEditCampaign = (campaign: Campaign) => {
+    setEditingCampaign(campaign);
+    setIsEditModalOpen(true);
   };
 
   const handleSort = (field: SortField) => {
@@ -455,7 +459,7 @@ export default function Campaigns() {
                             {(campaign.status === 'Pending' || campaign.status === 'Scheduled') && (
                               <button
                                 onClick={() => {
-                                  handleEditCampaign();
+                                  handleEditCampaign(campaign);
                                   document.getElementById(`dropdown-${campaign.id}`)?.classList.add('hidden');
                                 }}
                                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -493,6 +497,17 @@ export default function Campaigns() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleCampaignCreated}
+      />
+
+      {/* Modal para editar campaña */}
+      <EditCampaignModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingCampaign(null);
+        }}
+        onSuccess={handleCampaignCreated}
+        campaign={editingCampaign}
       />
     </div>
   );
