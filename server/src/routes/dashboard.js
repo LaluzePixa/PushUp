@@ -2,7 +2,7 @@ import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import { analyticsLimiter } from '../middleware/rateLimiter.js';
 import logger from '../config/logger.js';
-import { sanitizeForLike } from '../middleware/sanitization.js';
+import { sanitizeForLike } from '../utils/sanitize.js';
 
 const router = express.Router();
 
