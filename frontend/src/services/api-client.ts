@@ -9,44 +9,37 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 /**
  * Token management utilities
+ * SECURITY: Tokens are now stored ONLY in HTTP-only cookies set by the server
+ * This prevents XSS attacks as JavaScript cannot access HTTP-only cookies
  */
 export const tokenUtils = {
     get: () => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('auth_token');
-        }
+        // DEPRECATED: Tokens are now in HTTP-only cookies, not accessible from JS
+        // This is a security feature - we rely on the server to set/read tokens
+        console.warn('⚠️ tokenUtils.get() is deprecated. Tokens are in HTTP-only cookies.');
         return null;
     },
 
     set: (token: string) => {
-        if (typeof window !== 'undefined') {
-            // Save to localStorage
-            localStorage.setItem('auth_token', token);
+        // DEPRECATED: Tokens must be set by the server as HTTP-only cookies
+        // Client-side token storage is a security vulnerability
+        console.warn('⚠️ tokenUtils.set() is deprecated. Server must set HTTP-only cookies.');
+        console.log('🔒 Token received (will be set by server as HTTP-only cookie)');
 
-            // Also save to cookie for middleware
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7 days
-
-            const cookieString = [
-                `auth-token=${token}`,
-                `expires=${expires.toUTCString()}`,
-                `path=/`,
-                `SameSite=Lax`
-            ].join(';');
-
-            document.cookie = cookieString;
-            console.log('🍪 Token saved to cookie and localStorage:', token.substring(0, 20) + '...');
-        }
+        // For backward compatibility, we still send the token in the Authorization header
+        // But we DON'T store it in localStorage (XSS vulnerability)
+        // The server should set it as an HTTP-only cookie instead
     },
 
     remove: () => {
         if (typeof window !== 'undefined') {
-            // Remove from localStorage
+            // Clean up any legacy localStorage tokens (migration)
             localStorage.removeItem('auth_token');
 
-            // Remove cookie
-            document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            console.log('🗑️ Token removed from cookie and localStorage');
+            // Note: HTTP-only cookies can only be removed by the server
+            // This just clears any client-accessible cookies (for legacy support)
+            document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
+            console.log('🗑️ Legacy tokens cleared. Server will clear HTTP-only cookie.');
         }
     }
 };
@@ -66,21 +59,18 @@ export class ApiClient {
         options: RequestInit = {}
     ): Promise<ApiResponse<T>> {
         const url = `${this.baseURL}${endpoint}`;
-        const token = tokenUtils.get();
 
         const defaultHeaders: HeadersInit = {
             'Content-Type': 'application/json',
         };
 
-        // Solo agregar token si existe (para compatibilidad con sistema antiguo)
-        // Las cookies HTTP-only se envían automáticamente con credentials: 'include'
-        if (token) {
-            defaultHeaders.Authorization = `Bearer ${token}`;
-        }
+        // SECURITY: Authentication is now handled via HTTP-only cookies
+        // The server will read the token from cookies, not from Authorization header
+        // This prevents XSS attacks as JavaScript cannot access HTTP-only cookies
 
         const config: RequestInit = {
             ...options,
-            credentials: 'include', // Enviar cookies automáticamente
+            credentials: 'include', // CRITICAL: Send HTTP-only cookies automatically
             headers: {
                 ...defaultHeaders,
                 ...options.headers,

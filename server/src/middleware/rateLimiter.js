@@ -60,6 +60,77 @@ export const apiLimiter = rateLimit({
   skipSuccessfulRequests: true,
 });
 
+// Campaign creation rate limit
+// Prevents spam campaigns
+export const campaignLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 50, // 50 campaigns per hour per user
+  message: {
+    success: false,
+    error: {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Demasiadas campañas creadas. Por favor, intenta de nuevo en 1 hora.',
+    }
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Rate limit per authenticated user, not per IP
+  keyGenerator: (req) => {
+    return req.user?.id?.toString() || req.ip
+  }
+});
+
+// Notification sending rate limit
+// Prevents abuse of notification system
+export const notificationLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 notifications per minute
+  message: {
+    success: false,
+    error: {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Demasiadas notificaciones enviadas. Por favor, espera un momento.',
+    }
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    return req.user?.id?.toString() || req.ip
+  }
+});
+
+// Dashboard/Analytics rate limit
+// Prevents excessive database queries
+export const analyticsLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 requests per minute
+  message: {
+    success: false,
+    error: {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Demasiadas peticiones de analíticas. Por favor, espera un momento.',
+    }
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true
+});
+
+// File upload rate limit (if you add file uploads later)
+export const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20, // 20 uploads per hour
+  message: {
+    success: false,
+    error: {
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Demasiadas cargas de archivos. Por favor, intenta de nuevo en 1 hora.',
+    }
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // Custom handler for when rate limit is exceeded
 export const rateLimitHandler = (req, res) => {
   console.warn(`[Rate Limit] IP: ${req.ip} exceeded rate limit on ${req.path}`);

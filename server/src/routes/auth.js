@@ -1,6 +1,8 @@
 import express from 'express';
 import { signJWT, hashPassword, comparePassword, authenticateToken } from '../middleware/auth.js';
 import { authLimiter, registerLimiter } from '../middleware/rateLimiter.js';
+import { checkAccountLockout, recordFailedLogin, recordSuccessfulLogin } from '../middleware/accountLockout.js';
+import { logSecurityEvent, SecurityEvents } from '../utils/security-logger.js';
 import logger from '../config/logger.js';
 
 const router = express.Router();
@@ -161,6 +163,13 @@ router.post('/register', registerLimiter, async (req, res) => {
 
       await client.query('COMMIT');
 
+      // SECURITY: Log account creation
+      logSecurityEvent(SecurityEvents.ACCOUNT_CREATED, {
+        userId: newUser.id,
+        email: newUser.email,
+        role: newUser.role
+      }, req);
+
       // Generar JWT
       const token = signJWT({
         id: newUser.id,
@@ -198,7 +207,8 @@ router.post('/register', registerLimiter, async (req, res) => {
 
 // POST /auth/login - Inicio de sesión
 // Rate limited to prevent brute force attacks
-router.post('/login', authLimiter, async (req, res) => {
+// Account lockout checks for locked accounts
+router.post('/login', authLimiter, checkAccountLockout, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -219,6 +229,8 @@ router.post('/login', authLimiter, async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      // SECURITY: Record failed login attempt for non-existent users
+      await recordFailedLogin(req, email, 'User not found');
       return res.status(401).json({
         error: 'Credenciales inválidas',
         code: 'INVALID_CREDENTIALS'
@@ -229,6 +241,13 @@ router.post('/login', authLimiter, async (req, res) => {
 
     // Verificar si el usuario está activo
     if (!user.is_active) {
+      // SECURITY: Log attempt to access inactive account
+      logSecurityEvent(SecurityEvents.UNAUTHORIZED_ACCESS, {
+        userId: user.id,
+        email: user.email,
+        reason: 'Account inactive'
+      }, req);
+
       return res.status(401).json({
         error: 'Usuario desactivado',
         code: 'ACCOUNT_INACTIVE'
@@ -239,6 +258,8 @@ router.post('/login', authLimiter, async (req, res) => {
     const isPasswordValid = await comparePassword(password, user.password_hash);
 
     if (!isPasswordValid) {
+      // SECURITY: Record failed login attempt for invalid password
+      await recordFailedLogin(req, email, 'Invalid password');
       return res.status(401).json({
         error: 'Credenciales inválidas',
         code: 'INVALID_CREDENTIALS'
@@ -251,6 +272,16 @@ router.post('/login', authLimiter, async (req, res) => {
       email: user.email,
       role: user.role
     });
+
+    // SECURITY: Record successful login and reset failed attempts counter
+    await recordSuccessfulLogin(req, email);
+
+    // SECURITY: Log successful login event
+    logSecurityEvent(SecurityEvents.LOGIN_SUCCESS, {
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    }, req);
 
     // Actualizar última conexión (opcional)
     await pool.query(
@@ -375,6 +406,12 @@ router.post('/change-password', authLimiter, authenticateToken, async (req, res)
       'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
       [newPasswordHash, req.user.id]
     );
+
+    // SECURITY: Log password change event
+    logSecurityEvent(SecurityEvents.PASSWORD_CHANGED, {
+      userId: req.user.id,
+      email: req.user.email
+    }, req);
 
     res.json({
       message: 'Contraseña actualizada exitosamente'
