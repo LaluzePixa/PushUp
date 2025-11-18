@@ -1,9 +1,13 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { analyticsLimiter } from '../middleware/rateLimiter.js';
 import logger from '../config/logger.js';
 import { sanitizeForLike } from '../middleware/sanitization.js';
 
 const router = express.Router();
+
+// Apply analytics rate limiter to all dashboard routes (30 req/min per user)
+router.use(analyticsLimiter);
 
 /**
  * GET /dashboard/analytics - Obtener datos analíticos para gráficos

@@ -3,6 +3,7 @@ import { CronJob } from 'cron';
 import webpush from 'web-push';
 import validator from 'validator';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
+import { campaignLimiter, notificationLimiter } from '../middleware/rateLimiter.js';
 import { getWorkerPool } from '../services/worker-pool.js';
 import logger from '../config/logger.js';
 import dotenv from 'dotenv';
@@ -355,7 +356,8 @@ const executeCampaign = async (pool, campaignId) => {
 
 // POST /campaigns - Crear nueva campaña
 // Sanitize FIRST to clean HTML, THEN validate
-router.post('/', authenticateToken, sanitizeRequestBody, validateCampaignData, async (req, res) => {
+// Rate limited to 50 campaigns per hour per user
+router.post('/', authenticateToken, campaignLimiter, sanitizeRequestBody, validateCampaignData, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const {
@@ -838,7 +840,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 });
 
 // POST /campaigns/:id/send - Enviar campaña inmediatamente (solo borradores)
-router.post('/:id/send', authenticateToken, async (req, res) => {
+// Rate limited to 10 sends per minute per user
+router.post('/:id/send', authenticateToken, notificationLimiter, async (req, res) => {
   try {
     const { pool } = req.app.locals;
     const campaignId = parseInt(req.params.id);
