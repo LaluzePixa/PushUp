@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { authService, User, LoginCredentials, RegisterData } from '@/services/api';
+import type { User, LoginCredentials, RegisterData } from '@/services/api';
 import { checkAuth } from '@/lib/auth';
 
 interface AuthContextType {
@@ -39,6 +39,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (authStatus.isAuthenticated && authStatus.user) {
                 console.log('✅ Usuario autenticado:', authStatus.user.email);
                 setUser(authStatus.user);
+
+                // Verificar que también tenemos un token válido en localStorage
+                if (typeof window !== 'undefined') {
+                    const token = localStorage.getItem('auth_token');
+                    if (!token) {
+                        console.warn('⚠️ Sesión sin token JWT, cerrando sesión...');
+                        await logout();
+                        return;
+                    }
+                }
             } else {
                 console.log('❌ No hay sesión válida');
                 setUser(null);
@@ -71,26 +81,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     /**
      * Función de inicio de sesión
+     * Ahora usa el endpoint de Next.js que crea sesiones HTTP-only
      */
     const login = async (credentials: LoginCredentials): Promise<{ success: boolean; error?: string }> => {
         try {
             setLoading(true);
             console.log('🔄 Intentando login para:', credentials.email);
 
-            const response = await authService.login(credentials);
-            console.log('📡 Respuesta del backend:', {
-                hasUser: !!response.user,
-                hasToken: !!response.token,
-                userEmail: response.user?.email
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify(credentials),
             });
 
-            if (response.user && response.token) {
+            const data = await response.json();
+            console.log('📡 Respuesta del backend:', {
+                status: response.status,
+                hasUser: !!data.user,
+                hasToken: !!data.token,
+                userEmail: data.user?.email
+            });
+
+            if (response.ok && data.user) {
                 console.log('✅ Login exitoso, estableciendo usuario');
-                setUser(response.user);
+                setUser(data.user);
+
+                // Guardar token en localStorage para llamadas directas al backend
+                if (data.token && typeof window !== 'undefined') {
+                    localStorage.setItem('auth_token', data.token);
+                    console.log('🔑 Token guardado en localStorage');
+                }
+
                 return { success: true };
             } else {
-                console.log('❌ Login falló - respuesta incompleta');
-                return { success: false, error: response.error?.message || 'Error de autenticación' };
+                console.log('❌ Login falló:', data.error);
+                return { success: false, error: data.error || 'Error de autenticación' };
             }
         } catch (error: unknown) {
             console.error('❌ Error en login:', error);
@@ -104,20 +132,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     };    /**
      * Función de registro
+     * Ahora usa el endpoint de Next.js que crea sesiones HTTP-only
      */
     const register = async (userData: RegisterData): Promise<{ success: boolean; error?: string }> => {
         try {
             setLoading(true);
-            const response = await authService.register(userData);
+            console.log('🔄 Intentando registro para:', userData.email);
 
-            if (response.user && response.token) {
-                setUser(response.user);
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify(userData),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.user) {
+                console.log('✅ Registro exitoso, estableciendo usuario');
+                setUser(data.user);
+
+                // Guardar token en localStorage para llamadas directas al backend
+                if (data.token && typeof window !== 'undefined') {
+                    localStorage.setItem('auth_token', data.token);
+                    console.log('🔑 Token guardado en localStorage');
+                }
+
                 return { success: true };
             } else {
-                return { success: false, error: response.error?.message || 'Error de registro' };
+                console.log('❌ Registro falló:', data.error);
+                return { success: false, error: data.error || 'Error de registro' };
             }
         } catch (error: unknown) {
-            console.error('Register error:', error);
+            console.error('❌ Error en registro:', error);
             const errorMessage = error instanceof Error ? error.message : 'Error al registrarse';
             return {
                 success: false,
@@ -153,7 +202,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Limpiar localStorage legacy data
             localStorage.removeItem('selectedSiteId');
             localStorage.removeItem('user-email');
-            // Note: auth_token will be removed by server-side session management
+            localStorage.removeItem('auth_token'); // Limpiar token también
+            console.log('🗑️ Token y datos de sesión limpiados');
         }
 
         console.log('✅ Sesión cerrada correctamente');

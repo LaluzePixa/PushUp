@@ -78,6 +78,13 @@ export const SiteProvider = ({ children }: SiteProviderProps) => {
       }
     } catch (error) {
       console.error('Error loading sites:', error);
+      // Si hay un error 401, probablemente el token expiró
+      if (error instanceof Error && error.message.includes('expirado')) {
+        console.warn('⚠️ Token expirado, cerrando sesión...');
+        // Cerrar sesión completa (limpia tanto cookie como token)
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/login';
+      }
     } finally {
       setLoading(false);
       setIsInitialized(true);

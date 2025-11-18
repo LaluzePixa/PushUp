@@ -72,12 +72,15 @@ export class ApiClient {
             'Content-Type': 'application/json',
         };
 
+        // Solo agregar token si existe (para compatibilidad con sistema antiguo)
+        // Las cookies HTTP-only se envían automáticamente con credentials: 'include'
         if (token) {
             defaultHeaders.Authorization = `Bearer ${token}`;
         }
 
         const config: RequestInit = {
             ...options,
+            credentials: 'include', // Enviar cookies automáticamente
             headers: {
                 ...defaultHeaders,
                 ...options.headers,
@@ -89,6 +92,12 @@ export class ApiClient {
             const data = await response.json();
 
             if (!response.ok) {
+                // Si el error es 401 (no autorizado), limpiar token expirado
+                if (response.status === 401) {
+                    console.warn('🔒 Token expirado o inválido, limpiando...');
+                    tokenUtils.remove();
+                }
+
                 // Create error with full information
                 const errorMessage = data.error || data.message || `HTTP ${response.status}`;
                 const errorCode = data.code || 'UNKNOWN_ERROR';

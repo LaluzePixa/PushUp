@@ -14,26 +14,10 @@ const CodigoTextarea = ({ siteId, siteName }: { siteId?: number; siteName?: stri
         // Generar una clave única basada en el ID del sitio (en un sistema real esto vendría del backend)
         const siteKey = `site_${siteId}_${siteName?.toLowerCase().replace(/\s+/g, '_')}`;
 
-        return `<!-- start pushup tracking code -->
-<script>
-(function(w,d, s, id) {
-    if(typeof(w.pushup)!=='undefined') return;
-    w.pushup=w.pushup||function(){(w.pushup.q=w.pushup.q||[]).push(arguments)};
-    var js, fjs = d.getElementsByTagName(s)[0];
-    js = d.createElement(s);
-    js.id = id;
-    js.async=1;
-    js.src = "https://cdn.pushup.com/app.min.js";
-    fjs.parentNode.appendChild(js);
-}(window,document, 'script', 'pushup-jssdk'));
+        // Usar variable de entorno para la URL del servidor
+        const serverUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-pushup('setup',{
-    'siteId': ${siteId},
-    'key': '${siteKey}',
-    'integration': 'manual'
-});
-</script>
-<!-- end pushup tracking code -->`;
+        return `<script src="${serverUrl}/pu.js?id=${siteId}&k=${siteKey}" async></script>`;
     }, [siteId, siteName]);
 
     const [copiado, setCopiado] = useState(false);

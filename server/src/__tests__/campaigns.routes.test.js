@@ -382,7 +382,8 @@ describe('Campaigns Routes', () => {
                 .set(authHeaders);
 
             TestAssertions.expectValidResponse(response);
-            expect(response.body.deletedCampaign.id).toBe(testCampaign.id);
+            expect(response.body.success).toBe(true);
+            expect(response.body.data.id).toBe(testCampaign.id);
         });
 
         test('should return 404 for non-existent campaign', async () => {

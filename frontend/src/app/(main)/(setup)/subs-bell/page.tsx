@@ -72,12 +72,12 @@ export default function SubscriptionPage() {
     ];
 
   return (
-    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="p-6 bg-neutral-50 dark:bg-neutral-950 min-h-screen">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-white">Settings</h1>
-          <span className="px-2 py-1 bg-green-500 text-white text-xs rounded font-medium">
+          <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Settings</h1>
+          <span className="px-2 py-1 bg-green-600 text-white text-xs rounded font-medium">
             Active
           </span>
         </div>
@@ -88,89 +88,89 @@ export default function SubscriptionPage() {
         <div className="flex-1 max-w-md">
           {/* Styling Options */}
           <div className="mb-8">
-            <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-4">Styling options</h2>
+            <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4">Styling options</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Style:</label>
+                <label className="block text-sm text-neutral-900 dark:text-neutral-100 mb-1">Style:</label>
                 <select
                   value={style}
                   onChange={(e) => setStyle(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
                 >
-                  <option>Rounded</option>
-                  <option>Square</option>
-                  <option>Circle</option>
+                  <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Rounded</option>
+                  <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Square</option>
+                  <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Circle</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Position:</label>
+                <label className="block text-sm text-neutral-900 dark:text-neutral-100 mb-1">Position:</label>
                 <select
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
                 >
-                  <option>Bottom Left</option>
-                  <option>Bottom Right</option>
-                  <option>Top Left</option>
-                  <option>Top Right</option>
+                  <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Bottom Left</option>
+                  <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Bottom Right</option>
+                  <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Top Left</option>
+                  <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Top Right</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Theme:</label>
+                <label className="block text-sm text-neutral-900 dark:text-neutral-100 mb-1">Theme:</label>
                 <div className="flex gap-2">
                   <select
                     value={theme}
                     onChange={(e) => setTheme(e.target.value)}
-                    className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    className="flex-1 p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
                   >
-                    <option>Dark</option>
-                    <option>Light</option>
-                    <option>Auto</option>
+                    <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Dark</option>
+                    <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Light</option>
+                    <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Auto</option>
                   </select>
                   <input
                     type="color"
                     value={themeColor}
                     onChange={(e) => setThemeColor(e.target.value)}
-                    className="w-10 h-10 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+                    className="w-10 h-10 border-2 border-neutral-300 dark:border-neutral-700 rounded cursor-pointer"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Pop-up Style:</label>
+                <label className="block text-sm text-neutral-900 dark:text-neutral-100 mb-1">Pop-up Style:</label>
                 <select
                   value={popupStyle}
                   onChange={(e) => setPopupStyle(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
                 >
-                  <option>Standard</option>
-                  <option>Minimal</option>
-                  <option>Compact</option>
+                  <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Standard</option>
+                  <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Minimal</option>
+                  <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Compact</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Offset (px):</label>
+                <label className="block text-sm text-neutral-900 dark:text-neutral-100 mb-1">Offset (px):</label>
                 <div className="flex gap-2">
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">x-axis</span>
+                    <span className="text-xs text-neutral-700 dark:text-neutral-300">x-axis</span>
                     <input
                       type="number"
                       value={xAxis}
                       onChange={(e) => setXAxis(e.target.value)}
-                      className="w-16 p-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className="w-16 p-1 border-2 border-neutral-300 dark:border-neutral-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
                     />
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">y-axis</span>
+                    <span className="text-xs text-neutral-700 dark:text-neutral-300">y-axis</span>
                     <input
                       type="number"
                       value={yAxis}
                       onChange={(e) => setYAxis(e.target.value)}
-                      className="w-16 p-1 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className="w-16 p-1 border-2 border-neutral-300 dark:border-neutral-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
                     />
                   </div>
                 </div>
@@ -180,29 +180,29 @@ export default function SubscriptionPage() {
 
           {/* Action Button Configuration */}
           <div className="mb-8">
-            <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-4">Action button configuration</h2>
+            <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4">Action button configuration</h2>
 
             <div className="space-y-6">
               {/* Default */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Default</h3>
+                <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">Default</h3>
                 <div className="space-y-2">
                   <div>
-                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Title:</label>
+                    <label className="block text-xs text-neutral-700 dark:text-neutral-300 mb-1">Title:</label>
                     <textarea
                       value={defaultTitle}
                       onChange={(e) => setDefaultTitle(e.target.value)}
                       rows={2}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-600 resize-none bg-white dark:bg-neutral-900 text-black dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Button text:</label>
+                    <label className="block text-xs text-neutral-700 dark:text-neutral-300 mb-1">Button text:</label>
                     <input
                       type="text"
                       value={defaultButtonText}
                       onChange={(e) => setDefaultButtonText(e.target.value)}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
                     />
                   </div>
                 </div>
@@ -210,24 +210,24 @@ export default function SubscriptionPage() {
 
               {/* When user is subscribed to Push */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When user is subscribed to Push</h3>
+                <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">When user is subscribed to Push</h3>
                 <div className="space-y-2">
                   <div>
-                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Title:</label>
+                    <label className="block text-xs text-neutral-700 dark:text-neutral-300 mb-1">Title:</label>
                     <textarea
                       value={subscribedTitle}
                       onChange={(e) => setSubscribedTitle(e.target.value)}
                       rows={2}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-600 resize-none bg-white dark:bg-neutral-900 text-black dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Button text:</label>
+                    <label className="block text-xs text-neutral-700 dark:text-neutral-300 mb-1">Button text:</label>
                     <input
                       type="text"
                       value={subscribedButtonText}
                       onChange={(e) => setSubscribedButtonText(e.target.value)}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
                     />
                   </div>
                 </div>
@@ -235,24 +235,24 @@ export default function SubscriptionPage() {
 
               {/* When user has unsubscribed to Push */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When user has unsubscribed to Push</h3>
+                <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">When user has unsubscribed to Push</h3>
                 <div className="space-y-2">
                   <div>
-                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Title:</label>
+                    <label className="block text-xs text-neutral-700 dark:text-neutral-300 mb-1">Title:</label>
                     <textarea
                       value={unsubscribedTitle}
                       onChange={(e) => setUnsubscribedTitle(e.target.value)}
                       rows={2}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-600 resize-none bg-white dark:bg-neutral-900 text-black dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Button Text:</label>
+                    <label className="block text-xs text-neutral-700 dark:text-neutral-300 mb-1">Button Text:</label>
                     <input
                       type="text"
                       value={unsubscribedButtonText}
                       onChange={(e) => setUnsubscribedButtonText(e.target.value)}
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
                     />
                   </div>
                 </div>
@@ -263,7 +263,7 @@ export default function SubscriptionPage() {
           {/* Show last 3 notifications */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
-              <label className="text-sm text-gray-700 dark:text-gray-300">Show last 3 notifications:</label>
+              <label className="text-sm text-neutral-900 dark:text-neutral-100">Show last 3 notifications:</label>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -271,7 +271,7 @@ export default function SubscriptionPage() {
                   onChange={(e) => setShowLastNotifications(e.target.checked)}
                   className="sr-only"
                 />
-                <div className={`w-10 h-6 rounded-full transition-colors ${showLastNotifications ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                <div className={`w-10 h-6 rounded-full transition-colors ${showLastNotifications ? 'bg-green-600' : 'bg-neutral-300 dark:bg-neutral-700'
                   }`}>
                   <div className={`w-4 h-4 bg-white rounded-full shadow transform transition-transform mt-1 ${showLastNotifications ? 'translate-x-5' : 'translate-x-1'
                     }`}></div>
@@ -282,25 +282,25 @@ export default function SubscriptionPage() {
 
           {/* Heading */}
           <div className="mb-8">
-            <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-4">Heading</h2>
+            <h2 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-4">Heading</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Default:</label>
+                <label className="block text-xs text-neutral-700 dark:text-neutral-300 mb-1">Default:</label>
                 <textarea
                   value={defaultHeading}
                   onChange={(e) => setDefaultHeading(e.target.value)}
                   rows={2}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-600 resize-none bg-white dark:bg-neutral-900 text-black dark:text-white"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">When user is subscribed to push:</label>
+                <label className="block text-xs text-neutral-700 dark:text-neutral-300 mb-1">When user is subscribed to push:</label>
                 <textarea
                   value={subscribedHeading}
                   onChange={(e) => setSubscribedHeading(e.target.value)}
                   rows={2}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-600 resize-none bg-white dark:bg-neutral-900 text-black dark:text-white"
                 />
               </div>
             </div>
@@ -308,10 +308,10 @@ export default function SubscriptionPage() {
 
           {/* Action Buttons */}
           <div className="flex gap-3">
-            <button className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
+            <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium">
               Hide Subscription Bell
             </button>
-            <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+            <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium">
               Update Settings
             </button>
           </div>
@@ -320,19 +320,19 @@ export default function SubscriptionPage() {
         {/* Right Panel - Preview */}
         <div className="flex-1 max-w-lg">
           <div className="mb-4">
-            <h2 className="text-sm font-medium text-gray-600 dark:text-gray-300">Preview</h2>
+            <h2 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Preview</h2>
           </div>
 
           {/* Preview Tabs */}
           <div className="mb-4">
-            <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded">
+            <div className="flex gap-1 bg-neutral-100 dark:bg-neutral-900 p-1 rounded">
               {["Default", "When Subscribed", "When Unsubscribed"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setPreviewTab(tab)}
                   className={`px-3 py-1 text-xs rounded transition-colors ${previewTab === tab
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
+                    ? 'bg-green-600 text-white'
+                    : 'text-neutral-700 dark:text-neutral-300 hover:bg-white dark:hover:bg-neutral-800'
                     }`}
                 >
                   {tab}
@@ -342,35 +342,35 @@ export default function SubscriptionPage() {
           </div>
 
           {/* Preview Content */}
-          <div className="bg-gray-200 dark:bg-gray-800 p-6 rounded-lg h-96 relative overflow-hidden">
+          <div className="bg-neutral-100 dark:bg-neutral-900 p-6 rounded-lg h-96 relative overflow-hidden border-2 border-neutral-300 dark:border-neutral-700">
             {/* Bell Icon */}
             <div className="absolute bottom-4 right-4">
-              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-blue-600 transition-colors">
+              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-green-700 transition-colors">
                 <span className="text-white text-xl">🔔</span>
               </div>
             </div>
 
             {/* Close button */}
-            <button className="absolute top-2 right-2 w-6 h-6 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white text-xs">
+            <button className="absolute top-2 right-2 w-6 h-6 bg-neutral-900 dark:bg-neutral-100 bg-opacity-50 rounded-full flex items-center justify-center text-white dark:text-neutral-900 text-xs">
               ×
             </button>
 
             {/* Main Content */}
-            <div className="bg-white dark:bg-gray-700 rounded-lg p-4 max-w-sm mx-auto mt-8">
+            <div className="bg-white dark:bg-neutral-800 rounded-lg p-4 max-w-sm mx-auto mt-8 border-2 border-neutral-300 dark:border-neutral-700">
               {showLastNotifications && (
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium mb-3 text-gray-900 dark:text-white">
+                  <h3 className="text-sm font-medium mb-3 text-neutral-900 dark:text-neutral-100">
                     {previewTab === "When Subscribed" ? subscribedHeading : defaultHeading}
                   </h3>
                   <div className="space-y-2">
                     {isLoading ? (
-                      <div className="border border-gray-200 dark:border-gray-600 rounded p-2 bg-gray-50 dark:bg-gray-800">
-                        <div className="text-gray-500 dark:text-gray-400 text-sm">
+                      <div className="border border-neutral-300 dark:border-neutral-600 rounded p-2 bg-neutral-50 dark:bg-neutral-900">
+                        <div className="text-neutral-700 dark:text-neutral-300 text-sm">
                           Cargando notificaciones...
                         </div>
                       </div>
                     ) : error ? (
-                      <div className="border border-red-200 dark:border-red-800 rounded p-2 bg-red-50 dark:bg-red-900/20">
+                      <div className="border border-red-300 dark:border-red-700 rounded p-2 bg-red-50 dark:bg-red-900/20">
                         <div className="text-red-600 dark:text-red-400 text-sm font-medium">
                           Error al cargar notificaciones
                         </div>
@@ -380,11 +380,11 @@ export default function SubscriptionPage() {
                       </div>
                     ) : (
                       displayNotifications.map((notification, index) => (
-                        <div key={index} className="border border-blue-200 dark:border-blue-800 rounded p-2 bg-blue-50 dark:bg-blue-900/20">
-                          <div className="text-blue-600 dark:text-blue-400 text-sm font-medium">
+                        <div key={index} className="border border-green-300 dark:border-green-700 rounded p-2 bg-green-50 dark:bg-green-900/20">
+                          <div className="text-green-700 dark:text-green-300 text-sm font-medium">
                             {notification.title}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <div className="text-xs text-neutral-600 dark:text-neutral-400">
                             {notification.time}
                           </div>
                         </div>
@@ -395,13 +395,13 @@ export default function SubscriptionPage() {
               )}
 
               <div className="text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                <p className="text-sm text-neutral-700 dark:text-neutral-300 mb-4">
                   {previewTab === "Default" && defaultTitle}
                   {previewTab === "When Subscribed" && subscribedTitle}
                   {previewTab === "When Unsubscribed" && unsubscribedTitle}
                 </p>
 
-                <button className="w-full bg-blue-500 text-white py-2 px-4 rounded font-medium hover:bg-blue-600 transition-colors">
+                <button className="w-full bg-green-600 text-white py-2 px-4 rounded font-medium hover:bg-green-700 transition-colors">
                   {previewTab === "Default" && defaultButtonText}
                   {previewTab === "When Subscribed" && subscribedButtonText}
                   {previewTab === "When Unsubscribed" && unsubscribedButtonText}

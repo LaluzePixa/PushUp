@@ -118,7 +118,7 @@
     </div>
 
     <div id="status" class="status pending">
-      Cargando configuración del opt-in prompt...
+      ⏳ Cargando librería PushSaaS...
     </div>
 
     <div id="config-display" class="config-display" style="display: none;">
@@ -148,7 +148,8 @@
     <div style="margin-top: 40px; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
       <h3>🚀 Integración en tu sitio web</h3>
       <p>Para usar este opt-in prompt en tu sitio web, agrega este código antes del cierre de la etiqueta
-        <code>&lt;/body&gt;</code>:</p>
+        <code>&lt;/body&gt;</code>:
+      </p>
       <div class="config-display">
         <pre id="integration-code">Cargando código de integración...</pre>
       </div>
@@ -156,9 +157,14 @@
   </div>
 
   <!-- PushSaaS Script -->
-  <script src="/pushsaas.js"></script>
+  <script src="/pushsaas.js"
+    onerror="console.error('❌ Error: No se pudo cargar pushsaas.js'); document.getElementById('status').textContent = '❌ Error: No se pudo cargar la librería PushSaaS desde el servidor'; document.getElementById('status').className = 'status error';"></script>
 
   <script>
+    console.log('=== Demo.html script iniciado ===');
+    console.log('URL actual:', window.location.href);
+    console.log('window.PushSaaS disponible:', typeof window.PushSaaS);
+
     let currentConfig = null;
     let configVisible = false;
 
@@ -167,14 +173,23 @@
       const urlParams = new URLSearchParams(window.location.search);
       const configParam = urlParams.get('config');
 
+      console.log('getConfig: URL params:', window.location.search);
+      console.log('getConfig: config param:', configParam);
+
       if (configParam) {
         try {
-          return JSON.parse(decodeURIComponent(configParam));
+          const decoded = decodeURIComponent(configParam);
+          console.log('getConfig: decoded config:', decoded);
+          const parsed = JSON.parse(decoded);
+          console.log('getConfig: parsed config:', parsed);
+          return parsed;
         } catch (error) {
-          console.error('Error parsing config:', error);
+          console.error('getConfig: Error parsing config:', error);
+          console.error('getConfig: Config string was:', configParam);
         }
       }
 
+      console.log('getConfig: Usando configuración por defecto');
       // Configuración por defecto
       return {
         type: 'lightbox1',
@@ -232,51 +247,73 @@
     // Función para generar código de integración
     function generateIntegrationCode() {
       const apiBase = window.location.origin;
-      return `<!-- PushSaaS Opt-in Prompt -->
-<script>
-(function() {
-  var config = ${JSON.stringify(currentConfig, null, 2)};
-  var script = document.createElement('script');
-  script.src = '${apiBase}/pushsaas.js';
-  script.onload = function() {
-    if (window.PushSaaS) {
-      window.PushSaaS.init(config);
+      const configStr = JSON.stringify(currentConfig, null, 2);
+
+      return `<!-- PushSaaS Opt-in Prompt -->\n<script>\n(function() {\n  var config = ${configStr};\n  var script = document.createElement('script');\n  script.src = '${apiBase}/pushsaas.js';\n  script.onload = function() {\n    if (window.PushSaaS) {\n      window.PushSaaS.init(config);\n    }\n  };\n  document.head.appendChild(script);\n})();\n</` + `script>`;
     }
-  };
-  document.head.appendChild(script);
-})();
-  </script>`;
-  }
 
-  // Inicialización
-  window.addEventListener('load', function() {
-  currentConfig = getConfig();
+    // Función de inicialización
+    function initialize() {
+      console.log('=== Iniciando aplicación demo ===');
+      try {
+        currentConfig = getConfig();
+        console.log('Demo.html: Configuración cargada:', currentConfig);
 
-  // Mostrar código de integración
-  document.getElementById('integration-code').textContent = generateIntegrationCode();
+        // Verificar que la configuración sea válida
+        if (!currentConfig || !currentConfig.type) {
+          throw new Error('Configuración inválida');
+        }
 
-  // Verificar si PushSaaS está disponible
-  if (window.PushSaaS) {
-  updateStatus(`Configuración cargada - Tipo: ${currentConfig.type} | Cuándo mostrar: ${currentConfig.whenToShow}`,
-  'success');
+        // Mostrar código de integración
+        const integrationCode = generateIntegrationCode();
+        const codeElement = document.getElementById('integration-code');
+        if (codeElement) {
+          codeElement.textContent = integrationCode;
+        }
 
-  // Pequeño delay para que se vea el mensaje de estado
-  setTimeout(() => {
-  window.PushSaaS.init(currentConfig);
-  }, 1000);
-  } else {
-  updateStatus('Error: No se pudo cargar PushSaaS library', 'error');
-  }
-  });
+        // Verificar si PushSaaS está disponible
+        if (window.PushSaaS && typeof window.PushSaaS.init === 'function') {
+          updateStatus(`✅ Configuración cargada - Tipo: ${currentConfig.type} | Cuándo mostrar: ${currentConfig.whenToShow}`,
+            'success');
 
-  // Eventos para debugging
-  document.addEventListener('click', function(e) {
-  if (e.target.id === 'pushsaas-approve') {
-  updateStatus('¡Usuario aprobó las notificaciones! 🎉', 'success');
-  } else if (e.target.id === 'pushsaas-cancel') {
-  updateStatus('Usuario canceló las notificaciones', 'pending');
-  }
-  });
+          // Pequeño delay para que se vea el mensaje de estado
+          setTimeout(() => {
+            console.log('Demo.html: Inicializando PushSaaS con configuración:', currentConfig);
+            try {
+              window.PushSaaS.init(currentConfig);
+              updateStatus('🔔 Prompt inicializado correctamente. Espera a que aparezca según tu configuración.', 'success');
+            } catch (initError) {
+              console.error('Error al inicializar PushSaaS:', initError);
+              updateStatus('Error al inicializar el prompt: ' + initError.message, 'error');
+            }
+          }, 1000);
+        } else {
+          updateStatus('❌ Error: No se pudo cargar la librería PushSaaS', 'error');
+          console.error('Demo.html: window.PushSaaS no está definido o no tiene método init');
+          console.log('window.PushSaaS:', window.PushSaaS);
+        }
+      } catch (error) {
+        console.error('Error en inicialización:', error);
+        updateStatus('❌ Error: ' + error.message, 'error');
+      }
+    }
+
+    // Esperar a que se cargue todo, incluyendo pushsaas.js
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+      // DOMContentLoaded ya se disparó
+      initialize();
+    }
+
+    // Eventos para debugging
+    document.addEventListener('click', function (e) {
+      if (e.target.id === 'pushsaas-approve') {
+        updateStatus('¡Usuario aprobó las notificaciones! 🎉', 'success');
+      } else if (e.target.id === 'pushsaas-cancel') {
+        updateStatus('Usuario canceló las notificaciones', 'pending');
+      }
+    });
   </script>
 </body>
 

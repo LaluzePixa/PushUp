@@ -749,6 +749,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     if (isNaN(campaignId)) {
       return res.status(400).json({
+        success: false,
         error: 'ID de campaña inválido',
         code: 'INVALID_CAMPAIGN_ID'
       });
@@ -762,6 +763,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     if (campaignCheck.rows.length === 0) {
       return res.status(404).json({
+        success: false,
         error: 'Campaña no encontrada',
         code: 'CAMPAIGN_NOT_FOUND'
       });
@@ -779,8 +781,9 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     await pool.query('DELETE FROM campaigns WHERE id = $1', [campaignId]);
 
     res.json({
+      success: true,
       message: 'Campaña eliminada exitosamente',
-      deletedCampaign: {
+      data: {
         id: campaignId,
         name: campaign.name,
         status: campaign.status
@@ -790,6 +793,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   } catch (error) {
     logger.error({ err: error }, 'Campaign delete error');
     res.status(500).json({
+      success: false,
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
     });
@@ -859,7 +863,7 @@ router.post('/:id/send', authenticateToken, async (req, res) => {
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const { pool } = req.app.locals;
-    const { page = 1, limit = 20, status, search } = req.query;
+    const { page = 1, limit = 20, status, search, siteId } = req.query;
     const userId = req.user.id;
 
     let query = `
@@ -895,6 +899,13 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const queryParams = [userId];
     let paramIndex = 2;
+
+    // Aplicar filtro por sitio
+    if (siteId) {
+      query += ` AND c.site_id = $${paramIndex}`;
+      queryParams.push(parseInt(siteId));
+      paramIndex++;
+    }
 
     // Aplicar filtros
     if (status && status !== 'all') {
@@ -955,10 +966,26 @@ router.get('/', authenticateToken, async (req, res) => {
     // Obtener total de campañas para paginación
     let countQuery = 'SELECT COUNT(*) FROM campaigns WHERE user_id = $1';
     const countParams = [userId];
+    let countParamIndex = 2;
+
+    // Aplicar los mismos filtros que en la consulta principal
+    if (siteId) {
+      countQuery += ` AND site_id = $${countParamIndex}`;
+      countParams.push(parseInt(siteId));
+      countParamIndex++;
+    }
 
     if (status && status !== 'all') {
-      countQuery += ' AND status = $2';
+      countQuery += ` AND status = $${countParamIndex}`;
       countParams.push(status);
+      countParamIndex++;
+    }
+
+    if (search) {
+      const sanitized = sanitizeForLike(search);
+      countQuery += ` AND (name ILIKE $${countParamIndex} OR title ILIKE $${countParamIndex} OR body ILIKE $${countParamIndex})`;
+      countParams.push(`%${sanitized}%`);
+      countParamIndex++;
     }
 
     const countResult = await pool.query(countQuery, countParams);

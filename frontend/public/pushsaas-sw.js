@@ -3,7 +3,7 @@
  * Maneja las notificaciones push y eventos relacionados
  */
 
-const SW_VERSION = '1.0.0';
+const SW_VERSION = '1.0.1'; // Incrementar versión para forzar actualización
 const CACHE_NAME = `pushsaas-cache-${SW_VERSION}`;
 
 // URLs que se cachearán (solo las esenciales que existen)
@@ -79,49 +79,46 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Estrategia: Network First para API calls, Cache First para assets estáticos
+    // Estrategia: Network First para todo para evitar contenido desactualizado
+    // Esto asegura que siempre se intente obtener la versión más reciente
     const isApiCall = event.request.url.includes('/api/') ||
-        event.request.url.includes('localhost:3000');
+        event.request.url.includes('localhost:3000') ||
+        event.request.url.includes('localhost:3001');
 
-    if (isApiCall) {
-        // Network First para API calls
-        event.respondWith(
-            fetch(event.request)
-                .catch(() => {
-                    // Si falla la red, intentar respuesta desde caché
-                    return caches.match(event.request);
-                })
-        );
-    } else {
-        // Cache First para assets estáticos
-        event.respondWith(
-            caches.match(event.request)
-                .then((response) => {
-                    if (response) {
-                        return response;
+    // Network First para todas las requests (API y páginas)
+    event.respondWith(
+        fetch(event.request)
+            .then((response) => {
+                // Cachear solo si es exitoso y NO es una API call ni un documento HTML
+                if (response.status === 200 &&
+                    !isApiCall &&
+                    !event.request.url.includes('/_next/') &&
+                    event.request.destination !== 'document') {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseClone);
+                    });
+                }
+                return response;
+            })
+            .catch(() => {
+                // Si falla la red, intentar respuesta desde caché solo como fallback
+                return caches.match(event.request).then((cachedResponse) => {
+                    if (cachedResponse) {
+                        console.log('[SW] Usando caché como fallback para:', event.request.url);
+                        return cachedResponse;
                     }
-                    // Si no está en caché, hacer fetch y cachear
-                    return fetch(event.request)
-                        .then((response) => {
-                            // Solo cachear respuestas exitosas
-                            if (response.status === 200) {
-                                const responseClone = response.clone();
-                                caches.open(CACHE_NAME)
-                                    .then((cache) => {
-                                        cache.put(event.request, responseClone);
-                                    });
-                            }
-                            return response;
-                        });
-                })
-                .catch(() => {
-                    // Fallback para páginas offline
+                    // Si es una página y no hay caché, mostrar página offline
                     if (event.request.mode === 'navigate') {
-                        return caches.match('/');
+                        return new Response(
+                            '<html><body><h1>Sin conexión</h1><p>Por favor, verifica tu conexión a internet.</p></body></html>',
+                            { headers: { 'Content-Type': 'text/html' } }
+                        );
                     }
-                })
-        );
-    }
+                    throw new Error('No hay respuesta disponible');
+                });
+            })
+    );
 });
 
 /**

@@ -278,6 +278,7 @@
     <script>
         // Global state
         let currentTab = 'Default';
+        let siteId = null; // Will be set from URL params
         let config = {
             style: 'Rounded',
             position: 'Bottom Left',
@@ -338,6 +339,15 @@
         // Initialize
         async function init() {
             try {
+                // Get siteId from URL params
+                const urlParams = new URLSearchParams(window.location.search);
+                siteId = urlParams.get('siteId');
+
+                if (!siteId) {
+                    showError('siteId es requerido. Por favor, agrega ?siteId=X a la URL');
+                    return;
+                }
+
                 await loadConfig();
                 setupEventListeners();
                 updatePreview();
@@ -350,7 +360,7 @@
         // Load configuration from server
         async function loadConfig() {
             try {
-                const response = await fetch('/api/subscription-bell/config');
+                const response = await fetch(`/api/subscription-bell/config?siteId=${siteId}`);
                 if (!response.ok) {
                     throw new Error('Error al cargar la configuración');
                 }
@@ -468,6 +478,7 @@
                 updateBtn.textContent = 'Guardando...';
 
                 const configData = {
+                    siteId: parseInt(siteId),
                     style: style.value,
                     position: position.value,
                     theme: theme.value,
@@ -523,7 +534,10 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ isActive: newStatus })
+                    body: JSON.stringify({
+                        siteId: parseInt(siteId),
+                        isActive: newStatus
+                    })
                 });
 
                 if (!response.ok) {

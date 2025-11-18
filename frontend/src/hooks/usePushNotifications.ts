@@ -86,9 +86,36 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
             if ('serviceWorker' in navigator) {
                 const registration = await navigator.serviceWorker.register('/pushsaas-sw.js', {
                     scope: '/',
+                    updateViaCache: 'none', // Forzar que siempre verifique actualizaciones
                 });
 
                 console.log('Service Worker registrado exitosamente:', registration);
+
+                // Verificar actualizaciones del service worker cada vez
+                registration.update();
+
+                // Escuchar actualizaciones del service worker
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    console.log('[SW] Nueva versión del Service Worker encontrada');
+
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // Hay un nuevo service worker disponible
+                                console.log('[SW] Nueva versión instalada, activando...');
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            }
+                        });
+                    }
+                });
+
+                // Escuchar cambios de controlador (cuando se activa un nuevo SW)
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    console.log('[SW] Service Worker actualizado, recargando página...');
+                    // Recargar la página para usar el nuevo service worker
+                    window.location.reload();
+                });
 
                 // Esperar a que el Service Worker esté activo
                 if (registration.installing) {
@@ -199,13 +226,41 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
                 return false;
             }
 
+            // Verificar el estado del Service Worker
+            console.log('[usePushNotifications] Service Worker state:', registration.active?.state);
+            console.log('[usePushNotifications] Service Worker URL:', registration.active?.scriptURL);
+
+            // Intentar obtener suscripción existente primero
+            const existingSubscription = await registration.pushManager.getSubscription();
+            if (existingSubscription) {
+                console.log('[usePushNotifications] Ya existe una suscripción, desuscribiendo primero...');
+                await existingSubscription.unsubscribe();
+            }
+
             // Crear suscripción push con más logging
             console.log('[usePushNotifications] Llamando a pushManager.subscribe...');
-            const pushSubscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: convertedKey as BufferSource,
-            });
-            console.log('[usePushNotifications] Suscripción push creada exitosamente:', pushSubscription);
+            console.log('[usePushNotifications] ApplicationServerKey length:', convertedKey.byteLength);
+
+            let pushSubscription;
+            try {
+                pushSubscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: convertedKey as BufferSource,
+                });
+                console.log('[usePushNotifications] Suscripción push creada exitosamente:', pushSubscription);
+            } catch (subscribeError: unknown) {
+                console.error('[usePushNotifications] Error en pushManager.subscribe:', subscribeError);
+
+                // Verificar errores específicos
+                if (subscribeError instanceof Error) {
+                    if (subscribeError.name === 'AbortError') {
+                        throw new Error('Error de servicio push. Verifica: 1) Que no haya VPN/proxy activo, 2) Que el firewall permita conexiones push, 3) Intenta reiniciar el navegador');
+                    } else if (subscribeError.name === 'NotAllowedError') {
+                        throw new Error('Permisos de notificación denegados');
+                    }
+                }
+                throw subscribeError;
+            }
 
             // Preparar datos de suscripción para el backend
             console.log('[usePushNotifications] Preparando datos para el backend...');

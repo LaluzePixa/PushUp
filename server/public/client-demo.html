@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Website - PushSaaS Demo</title>
+
+    <!-- PushSaaS Configuration -->
+    <!-- IMPORTANT: Replace with your actual Site ID from PushSaaS dashboard -->
+    <meta name="pushsaas-site-id" content="1">
+    <meta name="pushsaas-server-url" content="http://localhost:3000">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        h1 {
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid #2563eb;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .info-box h3 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+
+        .code {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+
+        .success {
+            background: #dcfce7;
+            border-left-color: #16a34a;
+        }
+
+        .warning {
+            background: #fef3c7;
+            border-left-color: #eab308;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin: 10px 0;
+        }
+
+        .bell-indicator {
+            position: fixed;
+            bottom: 100px;
+            right: 40px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .arrow {
+            font-size: 24px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-10px);
+            }
+
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🌐 Welcome to My Website</h1>
+        <p>This is a demo of PushSaaS Subscription Bell Integration</p>
+    </div>
+
+    <div class="info-box success">
+        <h3>✅ PushSaaS Widget is Active!</h3>
+        <p>Look for the bell icon 🔔 in the bottom-right corner of your screen.</p>
+    </div>
+
+    <h2>How This Works</h2>
+    <ul>
+        <li><strong>Automatic Integration:</strong> The PushSaaS widget loads automatically when you add the meta tags
+            and script</li>
+        <li><strong>Customizable:</strong> All appearance settings are controlled from your PushSaaS dashboard</li>
+        <li><strong>User-Friendly:</strong> Visitors can subscribe with one click after granting notification permission
+        </li>
+        <li><strong>Privacy-Focused:</strong> Users can unsubscribe anytime by clicking the bell</li>
+    </ul>
+
+    <h2>Integration Code</h2>
+    <p>Here's what we added to this page to make the subscription bell work:</p>
+
+    <div class="code">
+        &lt;!-- Step 1: Add configuration meta tags --&gt;
+        &lt;meta name="pushsaas-site-id" content="1"&gt;
+        &lt;meta name="pushsaas-server-url" content="http://localhost:3000"&gt;
+
+        &lt;!-- Step 2: Load the widget script (before closing body tag) --&gt;
+        &lt;script src="http://localhost:3000/pushsaas-widget.js"&gt;&lt;/script&gt;
+    </div>
+
+    <div class="info-box">
+        <h3>📝 For Production</h3>
+        <p>Replace the server URL with your production PushSaaS server:</p>
+        <div class="code">
+            &lt;meta name="pushsaas-server-url" content="https://api.pushsaas.com"&gt;
+            &lt;script src="https://api.pushsaas.com/pushsaas-widget.js"&gt;&lt;/script&gt;
+        </div>
+    </div>
+
+    <h2>Try It Out!</h2>
+    <ol>
+        <li>Click the bell icon in the bottom-right corner 🔔</li>
+        <li>Click "SUSCRIBIRSE" to subscribe</li>
+        <li>Grant notification permissions when prompted</li>
+        <li>You'll receive a confirmation notification</li>
+        <li>Click the bell again to see your subscription status</li>
+        <li>You can unsubscribe anytime by clicking "DESUSCRIBIRSE"</li>
+    </ol>
+
+    <div class="info-box warning">
+        <h3>⚙️ Customize Your Bell</h3>
+        <p>To customize colors, text, position, and behavior:</p>
+        <ol>
+            <li>Visit: <code>http://localhost:3000/subs-bell.html?siteId=1</code></li>
+            <li>Login with your admin credentials</li>
+            <li>Customize all settings</li>
+            <li>Click "Actualizar Configuración" to save</li>
+            <li>Refresh this page to see your changes!</li>
+        </ol>
+    </div>
+
+    <h2>Features You Can Customize</h2>
+    <ul>
+        <li>🎨 <strong>Appearance:</strong> Rounded or Square bell, Dark or Light theme, Custom colors</li>
+        <li>📍 <strong>Position:</strong> Bottom-Right, Bottom-Left, Top-Right, or Top-Left</li>
+        <li>📝 <strong>Messages:</strong> Custom titles and button text for each state</li>
+        <li>🔔 <strong>Recent Notifications:</strong> Show/hide last 3 notifications in the modal</li>
+        <li>👁️ <strong>Visibility:</strong> Toggle the bell on/off globally</li>
+    </ul>
+
+    <h2>What Happens Next?</h2>
+    <p>Once users subscribe through this bell:</p>
+    <ul>
+        <li>Their subscription is stored in your PushSaaS database</li>
+        <li>They're linked to this specific site (Site ID: 1)</li>
+        <li>You can send them push notifications through PushSaaS campaigns</li>
+        <li>You can segment them and target specific audiences</li>
+        <li>You can track engagement metrics in your dashboard</li>
+    </ul>
+
+    <div class="info-box">
+        <h3>🎯 Sample Content</h3>
+        <p>This is just demo content for your website. The PushSaaS widget works with any website content!</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore
+            magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+            Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
+            laborum.</p>
+    </div>
+
+    <!-- Bell indicator (appears after 2 seconds) -->
+    <script>
+        setTimeout(() => {
+            if (!sessionStorage.getItem('bellIndicatorShown')) {
+                const indicator = document.createElement('div');
+                indicator.className = 'bell-indicator';
+                indicator.innerHTML = `
+                    <div style="text-align: center;">
+                        <div class="arrow">👇</div>
+                        <strong>Click the bell to subscribe!</strong>
+                        <p style="font-size: 12px; margin: 5px 0 0 0; color: #666;">
+                            Get notified about updates
+                        </p>
+                        <button onclick="this.parentElement.parentElement.remove()" 
+                                style="margin-top: 10px; padding: 5px 15px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Got it!
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(indicator);
+                sessionStorage.setItem('bellIndicatorShown', 'true');
+
+                // Auto-hide after 10 seconds
+                setTimeout(() => indicator.remove(), 10000);
+            }
+        }, 2000);
+    </script>
+
+    <!-- PushSaaS Widget Script -->
+    <!-- This should be loaded at the end of the body -->
+    <script src="http://localhost:3000/pushsaas-widget.js"></script>
+</body>
+
+</html>

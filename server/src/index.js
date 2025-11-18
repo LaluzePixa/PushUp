@@ -36,7 +36,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // Permitir scripts inline para demo.html
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'"],
       fontSrc: ["'self'"],
@@ -75,7 +75,7 @@ app.use(bodyParser.json());
 // Only allow specific origins from environment variable
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-  : ['http://localhost:3001']; // Default for development only
+  : ['http://localhost:3001', 'http://localhost:3000']; // Default for development only - incluye ambos puertos
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -166,7 +166,12 @@ app.post('/subscribe', optionalAuth, async (req, res) => {
   try {
     logger.debug({ body: JSON.stringify(req.body).slice(0, 200) }, 'Subscribe request received');
     const sub = req.body;
-    const { siteId } = req.body; // Para soporte multi-tenant
+    const { siteId, isDemoMode } = req.body; // Para soporte multi-tenant y modo demo
+
+    // Marcar si es modo demo para logging
+    if (isDemoMode) {
+      logger.info('🔧 Demo mode subscription received (localhost development)');
+    }
 
     if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) {
       return res.status(400).json({
@@ -205,14 +210,24 @@ app.post('/subscribe', optionalAuth, async (req, res) => {
       message: 'Suscripción guardada exitosamente'
     });
   } catch (error) {
-    logger.error({ err: error }, 'Subscribe error');
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: 'Error interno del servidor'
-      }
-    });
+    logger.error({
+      err: error,
+      message: error.message,
+      stack: error.stack,
+      body: req.body
+    }, 'Subscribe error');
+
+    // Si la respuesta ya fue enviada, no enviar otra
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Error interno del servidor',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        }
+      });
+    }
   }
 });
 

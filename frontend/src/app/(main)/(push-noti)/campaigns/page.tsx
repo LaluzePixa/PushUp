@@ -53,24 +53,20 @@ export default function Campaigns() {
     }
   }, [searchTerm, pagination.current, pagination.limit, selectedSite?.id]);
 
+  // Load campaigns when dependencies change
   useEffect(() => {
     loadCampaigns();
   }, [loadCampaigns]);
 
-  // When selected site changes, clear campaigns and reload
+  // When selected site changes, reset pagination to page 1
   useEffect(() => {
-    // Reset listing to avoid showing campaigns from previous site
-    setCampaigns([]);
-    setPagination(prev => ({ ...prev, current: 1, total: 0, pages: 0 }));
-    // If no site is selected, set loading to false and do not fetch
-    if (!selectedSite) {
-      setIsLoading(false);
-      return;
-    }
+    setPagination(prev => ({ ...prev, current: 1 }));
+  }, [selectedSite?.id]);
 
-    // Trigger reload via loadCampaigns
-    loadCampaigns();
-  }, [selectedSite, loadCampaigns]);
+  // When search term changes, reset pagination to page 1
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, current: 1 }));
+  }, [searchTerm]);
 
   // Cerrar dropdowns al hacer clic fuera
   useEffect(() => {
@@ -123,10 +119,15 @@ export default function Campaigns() {
     }
 
     try {
-      await campaignsService.deleteCampaign(campaignId);
-      alert('Campaña eliminada exitosamente');
-      // Recargar campañas
-      handleCampaignCreated();
+      const response = await campaignsService.deleteCampaign(campaignId);
+
+      if (response.success) {
+        alert('Campaña eliminada exitosamente');
+        // Recargar campañas
+        handleCampaignCreated();
+      } else {
+        alert('Error al eliminar la campaña');
+      }
     } catch (error: unknown) {
       console.error('Error deleting campaign:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';

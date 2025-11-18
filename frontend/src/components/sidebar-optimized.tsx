@@ -64,7 +64,7 @@ type Item = {
 // Datos del menú
 const mainMenuData = [
     {
-        title: "Patata",
+        title: "Dashboard",
         url: "/dashboard",
         icon: Gauge,
         isCollapsible: true,

@@ -231,6 +231,32 @@ CREATE TABLE IF NOT EXISTS optin_configurations (
   UNIQUE(user_id, site_id)
 );
 
+-- Tabla de configuraciones de subscription bell
+CREATE TABLE IF NOT EXISTS subscription_bell_configs (
+  id SERIAL PRIMARY KEY,
+  site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+  style VARCHAR(50) NOT NULL DEFAULT 'Rounded' CHECK (style IN ('Rounded', 'Square')),
+  position VARCHAR(50) NOT NULL DEFAULT 'Bottom Right' CHECK (position IN ('Bottom Left', 'Bottom Right', 'Top Left', 'Top Right')),
+  theme VARCHAR(50) NOT NULL DEFAULT 'Dark' CHECK (theme IN ('Dark', 'Light')),
+  theme_color VARCHAR(20) NOT NULL DEFAULT '#4A90E2',
+  popup_style VARCHAR(50) NOT NULL DEFAULT 'Standard',
+  x_axis VARCHAR(10) NOT NULL DEFAULT '15',
+  y_axis VARCHAR(10) NOT NULL DEFAULT '15',
+  default_title VARCHAR(500) NOT NULL DEFAULT 'Suscríbete para recibir notificaciones push sobre las últimas actualizaciones',
+  default_button_text VARCHAR(100) NOT NULL DEFAULT 'SUSCRIBIRSE',
+  subscribed_title VARCHAR(500) NOT NULL DEFAULT 'Estás suscrito a las notificaciones push',
+  subscribed_button_text VARCHAR(100) NOT NULL DEFAULT 'DESUSCRIBIRSE',
+  unsubscribed_title VARCHAR(500) NOT NULL DEFAULT 'No estás suscrito a las notificaciones push',
+  unsubscribed_button_text VARCHAR(100) NOT NULL DEFAULT 'SUSCRIBIRSE',
+  show_last_notifications BOOLEAN NOT NULL DEFAULT true,
+  default_heading VARCHAR(255) NOT NULL DEFAULT 'Aquí hay algunas notificaciones que te perdiste:',
+  subscribed_heading VARCHAR(255) NOT NULL DEFAULT 'Notificaciones Recientes',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(site_id)
+);
+
 -- Tabla de journeys de automatización
 CREATE TABLE IF NOT EXISTS journeys (
   id SERIAL PRIMARY KEY,
@@ -276,6 +302,10 @@ CREATE INDEX IF NOT EXISTS idx_optin_configurations_user_id ON optin_configurati
 CREATE INDEX IF NOT EXISTS idx_optin_configurations_site_id ON optin_configurations (site_id);
 CREATE INDEX IF NOT EXISTS idx_optin_configurations_is_active ON optin_configurations (is_active);
 
+-- Índices para subscription_bell_configs
+CREATE INDEX IF NOT EXISTS idx_subscription_bell_configs_site_id ON subscription_bell_configs (site_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_bell_configs_is_active ON subscription_bell_configs (is_active);
+
 -- Índices para journeys
 CREATE INDEX IF NOT EXISTS idx_journeys_user_id ON journeys (user_id);
 CREATE INDEX IF NOT EXISTS idx_journeys_site_id ON journeys (site_id);
@@ -291,6 +321,24 @@ CREATE INDEX IF NOT EXISTS idx_journey_executions_journey_id ON journey_executio
 CREATE INDEX IF NOT EXISTS idx_journey_executions_subscription_id ON journey_executions (subscription_id);
 CREATE INDEX IF NOT EXISTS idx_journey_executions_status ON journey_executions (status);
 CREATE INDEX IF NOT EXISTS idx_journey_executions_started_at ON journey_executions (started_at DESC);
+
+-- Tabla de ubicaciones de monitoreo de uptime
+CREATE TABLE IF NOT EXISTS monitoring_locations (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  location_id VARCHAR(50) NOT NULL,
+  enabled BOOLEAN NOT NULL DEFAULT false,
+  is_active BOOLEAN NOT NULL DEFAULT false,
+  last_check_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, location_id)
+);
+
+-- Índices para monitoring_locations
+CREATE INDEX IF NOT EXISTS idx_monitoring_locations_user_id ON monitoring_locations (user_id);
+CREATE INDEX IF NOT EXISTS idx_monitoring_locations_location_id ON monitoring_locations (location_id);
+CREATE INDEX IF NOT EXISTS idx_monitoring_locations_enabled ON monitoring_locations (enabled);
 
 -- Crear usuario superadmin por defecto si no existe (password: admin123)
 INSERT INTO users (email, password_hash, role) 

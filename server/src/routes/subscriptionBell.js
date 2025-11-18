@@ -1,47 +1,37 @@
 import express from 'express';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
 import logger from '../config/logger.js';
+import SubscriptionBellService from '../services/subscriptionBellService.js';
 
 const router = express.Router();
 
-// ⚠️ CRITICAL TODO: Move to database
-// In-memory storage is NOT production-ready:
-// - Data lost on server restart
-// - Not multi-tenant safe (single global state)
-// - No audit trail or history
-// ACTION: Create 'subscription_bell_configs' table with site_id FK
-let subscriptionBellConfig = {
-    style: 'Rounded',
-    position: 'Bottom Left',
-    theme: 'Dark',
-    themeColor: '#4A90E2',
-    popupStyle: 'Standard',
-    xAxis: '15',
-    yAxis: '15',
-    defaultTitle: 'Suscríbete para recibir notificaciones push sobre las últimas actualizaciones',
-    defaultButtonText: 'SUSCRIBIRSE',
-    subscribedTitle: 'Estás suscrito a las notificaciones push',
-    subscribedButtonText: 'DESUSCRIBIRSE',
-    unsubscribedTitle: 'No estás suscrito a las notificaciones push',
-    unsubscribedButtonText: 'SUSCRIBIRSE',
-    showLastNotifications: true,
-    defaultHeading: 'Aquí hay algunas notificaciones que te perdiste:',
-    subscribedHeading: 'Notificaciones Recientes',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-};
-
 /**
  * @route GET /api/subscription-bell/config
- * @desc Get subscription bell configuration
- * @access Public (para que la página HTML pueda acceder sin autenticación)
+ * @desc Get subscription bell configuration for a site
+ * @access Public (for the HTML page to access without authentication)
+ * @requires Query param: siteId
  */
-router.get('/config', (req, res) => {
+router.get('/config', async (req, res) => {
     try {
+        const { pool } = req.app.locals;
+        const { siteId } = req.query;
+
+        if (!siteId) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'siteId es requerido'
+                }
+            });
+        }
+
+        const service = new SubscriptionBellService(pool);
+        const config = await service.getOrCreateConfig(parseInt(siteId));
+
         res.json({
             success: true,
-            data: subscriptionBellConfig,
+            data: config,
             message: 'Configuración obtenida exitosamente'
         });
     } catch (error) {
@@ -60,11 +50,13 @@ router.get('/config', (req, res) => {
  * @route POST /api/subscription-bell/config
  * @desc Update subscription bell configuration
  * @access Private (Admin/SuperAdmin only)
- * SECURITY FIX: Added authentication - only admins can modify configuration
+ * @requires Body: siteId and configuration fields
  */
-router.post('/config', authenticateToken, authorizeRoles('admin', 'superadmin'), (req, res) => {
+router.post('/config', authenticateToken, authorizeRoles('admin', 'superadmin'), async (req, res) => {
     try {
+        const { pool } = req.app.locals;
         const {
+            siteId,
             style,
             position,
             theme,
@@ -85,6 +77,16 @@ router.post('/config', authenticateToken, authorizeRoles('admin', 'superadmin'),
         } = req.body;
 
         // Validación básica
+        if (!siteId) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'siteId es requerido'
+                }
+            });
+        }
+
         if (!defaultTitle || !defaultButtonText) {
             return res.status(400).json({
                 success: false,
@@ -95,32 +97,56 @@ router.post('/config', authenticateToken, authorizeRoles('admin', 'superadmin'),
             });
         }
 
+        // Verificar que el sitio pertenece al usuario (excepto superadmin)
+        if (req.user.role !== 'superadmin') {
+            const siteCheck = await pool.query(
+                'SELECT id FROM sites WHERE id = $1 AND user_id = $2',
+                [siteId, req.user.id]
+            );
+
+            if (siteCheck.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    error: {
+                        code: 'SITE_NOT_FOUND',
+                        message: 'Sitio no encontrado o no tienes permisos para modificarlo'
+                    }
+                });
+            }
+        }
+
+        const service = new SubscriptionBellService(pool);
+
+        // Verificar si existe la configuración, si no, crearla
+        let config = await service.getConfigBySiteId(parseInt(siteId));
+        if (!config) {
+            config = await service.createDefaultConfig(parseInt(siteId));
+        }
+
         // Actualizar la configuración
-        subscriptionBellConfig = {
-            ...subscriptionBellConfig,
-            style: style || subscriptionBellConfig.style,
-            position: position || subscriptionBellConfig.position,
-            theme: theme || subscriptionBellConfig.theme,
-            themeColor: themeColor || subscriptionBellConfig.themeColor,
-            popupStyle: popupStyle || subscriptionBellConfig.popupStyle,
-            xAxis: xAxis || subscriptionBellConfig.xAxis,
-            yAxis: yAxis || subscriptionBellConfig.yAxis,
+        const updatedConfig = await service.updateConfig(parseInt(siteId), {
+            style,
+            position,
+            theme,
+            themeColor,
+            popupStyle,
+            xAxis,
+            yAxis,
             defaultTitle,
             defaultButtonText,
-            subscribedTitle: subscribedTitle || subscriptionBellConfig.subscribedTitle,
-            subscribedButtonText: subscribedButtonText || subscriptionBellConfig.subscribedButtonText,
-            unsubscribedTitle: unsubscribedTitle || subscriptionBellConfig.unsubscribedTitle,
-            unsubscribedButtonText: unsubscribedButtonText || subscriptionBellConfig.unsubscribedButtonText,
-            showLastNotifications: showLastNotifications !== undefined ? showLastNotifications : subscriptionBellConfig.showLastNotifications,
-            defaultHeading: defaultHeading || subscriptionBellConfig.defaultHeading,
-            subscribedHeading: subscribedHeading || subscriptionBellConfig.subscribedHeading,
-            isActive: isActive !== undefined ? isActive : subscriptionBellConfig.isActive,
-            updatedAt: new Date().toISOString()
-        };
+            subscribedTitle,
+            subscribedButtonText,
+            unsubscribedTitle,
+            unsubscribedButtonText,
+            showLastNotifications,
+            defaultHeading,
+            subscribedHeading,
+            isActive
+        });
 
         res.json({
             success: true,
-            data: subscriptionBellConfig,
+            data: updatedConfig,
             message: 'Configuración actualizada exitosamente'
         });
     } catch (error) {
@@ -139,11 +165,22 @@ router.post('/config', authenticateToken, authorizeRoles('admin', 'superadmin'),
  * @route POST /api/subscription-bell/toggle
  * @desc Toggle subscription bell visibility
  * @access Private (Admin/SuperAdmin only)
- * SECURITY FIX: Added authentication - only admins can toggle visibility
+ * @requires Body: siteId and isActive
  */
-router.post('/toggle', authenticateToken, authorizeRoles('admin', 'superadmin'), (req, res) => {
+router.post('/toggle', authenticateToken, authorizeRoles('admin', 'superadmin'), async (req, res) => {
     try {
-        const { isActive } = req.body;
+        const { pool } = req.app.locals;
+        const { siteId, isActive } = req.body;
+
+        if (!siteId) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'siteId es requerido'
+                }
+            });
+        }
 
         if (typeof isActive !== 'boolean') {
             return res.status(400).json({
@@ -155,14 +192,39 @@ router.post('/toggle', authenticateToken, authorizeRoles('admin', 'superadmin'),
             });
         }
 
-        subscriptionBellConfig.isActive = isActive;
-        subscriptionBellConfig.updatedAt = new Date().toISOString();
+        // Verificar que el sitio pertenece al usuario (excepto superadmin)
+        if (req.user.role !== 'superadmin') {
+            const siteCheck = await pool.query(
+                'SELECT id FROM sites WHERE id = $1 AND user_id = $2',
+                [siteId, req.user.id]
+            );
+
+            if (siteCheck.rows.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    error: {
+                        code: 'SITE_NOT_FOUND',
+                        message: 'Sitio no encontrado o no tienes permisos para modificarlo'
+                    }
+                });
+            }
+        }
+
+        const service = new SubscriptionBellService(pool);
+
+        // Verificar si existe la configuración, si no, crearla
+        let config = await service.getConfigBySiteId(parseInt(siteId));
+        if (!config) {
+            config = await service.createDefaultConfig(parseInt(siteId));
+        }
+
+        const updatedConfig = await service.toggleVisibility(parseInt(siteId), isActive);
 
         res.json({
             success: true,
             data: {
-                isActive: subscriptionBellConfig.isActive,
-                updatedAt: subscriptionBellConfig.updatedAt
+                isActive: updatedConfig.isActive,
+                updatedAt: updatedConfig.updatedAt
             },
             message: `Campana de suscripción ${isActive ? 'activada' : 'desactivada'} exitosamente`
         });
@@ -182,25 +244,42 @@ router.post('/toggle', authenticateToken, authorizeRoles('admin', 'superadmin'),
  * @route GET /api/subscription-bell/widget-config
  * @desc Get public widget configuration for embedding
  * @access Public
+ * @requires Query param: siteId
  */
-router.get('/widget-config', (req, res) => {
+router.get('/widget-config', async (req, res) => {
     try {
+        const { pool } = req.app.locals;
+        const { siteId } = req.query;
+
+        if (!siteId) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'siteId es requerido'
+                }
+            });
+        }
+
+        const service = new SubscriptionBellService(pool);
+        const config = await service.getOrCreateConfig(parseInt(siteId));
+
         // Solo retornar la configuración necesaria para el widget público
         const publicConfig = {
-            style: subscriptionBellConfig.style,
-            position: subscriptionBellConfig.position,
-            theme: subscriptionBellConfig.theme,
-            themeColor: subscriptionBellConfig.themeColor,
-            defaultTitle: subscriptionBellConfig.defaultTitle,
-            defaultButtonText: subscriptionBellConfig.defaultButtonText,
-            subscribedTitle: subscriptionBellConfig.subscribedTitle,
-            subscribedButtonText: subscriptionBellConfig.subscribedButtonText,
-            unsubscribedTitle: subscriptionBellConfig.unsubscribedTitle,
-            unsubscribedButtonText: subscriptionBellConfig.unsubscribedButtonText,
-            showLastNotifications: subscriptionBellConfig.showLastNotifications,
-            defaultHeading: subscriptionBellConfig.defaultHeading,
-            subscribedHeading: subscriptionBellConfig.subscribedHeading,
-            isActive: subscriptionBellConfig.isActive
+            style: config.style,
+            position: config.position,
+            theme: config.theme,
+            themeColor: config.themeColor,
+            defaultTitle: config.defaultTitle,
+            defaultButtonText: config.defaultButtonText,
+            subscribedTitle: config.subscribedTitle,
+            subscribedButtonText: config.subscribedButtonText,
+            unsubscribedTitle: config.unsubscribedTitle,
+            unsubscribedButtonText: config.unsubscribedButtonText,
+            showLastNotifications: config.showLastNotifications,
+            defaultHeading: config.defaultHeading,
+            subscribedHeading: config.subscribedHeading,
+            isActive: config.isActive
         };
 
         res.json({

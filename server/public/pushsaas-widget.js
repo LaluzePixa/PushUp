@@ -72,7 +72,7 @@ class PushSaaSWidget {
 
     async loadConfig() {
         try {
-            const response = await fetch(`${this.config.serverUrl}/api/subscription-bell/widget-config`);
+            const response = await fetch(`${this.config.serverUrl}/api/subscription-bell/widget-config?siteId=${this.config.siteId}`);
             const data = await response.json();
 
             if (data.success) {

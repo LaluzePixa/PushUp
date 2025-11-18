@@ -158,9 +158,9 @@ export default function Optinp() {
       id: "lightbox1",
       name: "Lightbox 1",
       icon: (
-        <div className="w-16 h-12 bg-gray-200 rounded border-2 border-blue-500 flex items-center justify-center">
-          <div className="w-8 h-6 bg-white border border-gray-300 rounded flex items-center justify-center">
-            <div className="w-4 h-1 bg-blue-400 rounded"></div>
+        <div className="w-16 h-12 bg-neutral-100 dark:bg-neutral-800 rounded border-2 border-neutral-300 dark:border-neutral-600 flex items-center justify-center">
+          <div className="w-8 h-6 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 rounded flex items-center justify-center">
+            <div className="w-4 h-1 bg-green-600 rounded"></div>
           </div>
         </div>
       )
@@ -169,8 +169,8 @@ export default function Optinp() {
       id: "lightbox2",
       name: "Lightbox 2",
       icon: (
-        <div className="w-16 h-12 bg-gray-200 rounded border border-gray-300 flex items-center justify-center">
-          <div className="w-10 h-2 bg-blue-400 rounded"></div>
+        <div className="w-16 h-12 bg-neutral-100 dark:bg-neutral-800 rounded border border-neutral-300 dark:border-neutral-600 flex items-center justify-center">
+          <div className="w-10 h-2 bg-green-600 rounded"></div>
         </div>
       )
     },
@@ -178,8 +178,8 @@ export default function Optinp() {
       id: "bellIcon",
       name: "Bell Icon",
       icon: (
-        <div className="w-16 h-12 bg-gray-200 rounded border border-gray-300 flex items-center justify-center">
-          <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+        <div className="w-16 h-12 bg-neutral-100 dark:bg-neutral-800 rounded border border-neutral-300 dark:border-neutral-600 flex items-center justify-center">
+          <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
             <span className="text-white text-xs">🔔</span>
           </div>
         </div>
@@ -188,56 +188,74 @@ export default function Optinp() {
   ];
 
   return (
-    <div className="flex gap-8 p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="flex gap-8 p-6 bg-neutral-50 dark:bg-neutral-950 min-h-screen">
       {/* Formulario a la izquierda */}
       <div className="flex-1 max-w-md">
         {/* Estado de las notificaciones */}
-        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Estado de Notificaciones Push</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">{getNotificationStatus()}</p>
+        <div className="mb-6 p-4 bg-white dark:bg-neutral-900 rounded-lg border-2 border-neutral-300 dark:border-neutral-700">
+          <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">Estado de Notificaciones Push</h3>
+          <p className="text-sm text-neutral-700 dark:text-neutral-300">{getNotificationStatus()}</p>
           {error && (
-            <p className="text-sm text-red-600 mt-1">Error: {error}</p>
+            <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
+              <p className="text-sm text-red-600 dark:text-red-400 font-medium">Error: {error}</p>
+              <button
+                onClick={async () => {
+                  if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    console.log('Registros SW:', registrations);
+                    for (const reg of registrations) {
+                      console.log('Desregistrando SW:', reg);
+                      await reg.unregister();
+                    }
+                    alert('Service Workers eliminados. Recarga la página (F5)');
+                  }
+                }}
+                className="mt-2 text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+              >
+                🔄 Reiniciar Service Worker
+              </button>
+            </div>
           )}
           {selectedSite && (
-            <p className="text-sm text-blue-600 mt-1">
+            <p className="text-sm text-green-600 dark:text-green-400 mt-1">
               Sitio activo: {selectedSite.name} ({selectedSite.domain})
-              {configId && <span className="ml-2 text-green-600">• Config guardada (ID: {configId})</span>}
+              {configId && <span className="ml-2 text-green-700 dark:text-green-300">• Config guardada (ID: {configId})</span>}
             </p>
           )}
           {!selectedSite && (
-            <p className="text-sm text-orange-600 mt-1">
+            <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">
               ⚠️ Selecciona un sitio desde el menú lateral
             </p>
           )}
           {lastSaved && (
-            <p className="text-sm text-green-600 mt-1">
+            <p className="text-sm text-green-600 dark:text-green-400 mt-1">
               ✅ Última actualización: {lastSaved.toLocaleTimeString()}
             </p>
           )}
           {saveError && (
-            <p className="text-sm text-red-600 mt-1">
+            <p className="text-sm text-red-600 dark:text-red-400 mt-1">
               ❌ Error al guardar: {saveError}
             </p>
           )}
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
             When to Show:
           </label>
           <select
             value={whenToShow}
             onChange={(e) => setWhenToShow(e.target.value)}
-            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-green-600"
           >
-            <option>Show Immediately</option>
-            <option>After 5 seconds</option>
-            <option>On exit intent</option>
+            <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Show Immediately</option>
+            <option className="text-black dark:text-white bg-white dark:bg-neutral-900">After 5 seconds</option>
+            <option className="text-black dark:text-white bg-white dark:bg-neutral-900">On exit intent</option>
           </select>
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+          <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-4">
             Select Custom-prompt Type:
           </label>
           <div className="grid grid-cols-3 gap-3 mb-4">
@@ -252,8 +270,8 @@ export default function Optinp() {
                   className="sr-only"
                 />
                 <div className={`p-3 rounded-lg border-2 text-center transition-colors ${selectedType === type.id
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
+                  ? 'border-green-600 bg-green-50 dark:bg-green-950/50'
+                  : 'border-neutral-300 dark:border-neutral-700 hover:border-green-600 dark:hover:border-green-500 bg-white dark:bg-neutral-900'
                   }`}>
                   <div className="flex justify-center mb-2">
                     {type.icon}
@@ -263,9 +281,9 @@ export default function Optinp() {
                       type="radio"
                       checked={selectedType === type.id}
                       onChange={() => { }}
-                      className="w-4 h-4 text-blue-600 mr-2"
+                      className="w-4 h-4 text-green-600 accent-green-600 mr-2"
                     />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">{type.name}</span>
+                    <span className="text-xs text-neutral-700 dark:text-neutral-300">{type.name}</span>
                   </div>
                 </div>
               </label>
@@ -275,136 +293,136 @@ export default function Optinp() {
 
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
+            <label className="text-sm font-medium text-neutral-900 dark:text-neutral-100 w-24">
               Animation:
             </label>
             <select
               value={animation}
               onChange={(e) => setAnimation(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-green-600"
             >
-              <option>Drop-in</option>
-              <option>Fade-in</option>
-              <option>Slide-up</option>
+              <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Drop-in</option>
+              <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Fade-in</option>
+              <option className="text-black dark:text-white bg-white dark:bg-neutral-900">Slide-up</option>
             </select>
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
+            <label className="text-sm font-medium text-neutral-900 dark:text-neutral-100 w-24">
               Background Color:
             </label>
             <input
               type="color"
               value={backgroundColor}
               onChange={(e) => setBackgroundColor(e.target.value)}
-              className="w-8 h-8 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+              className="w-8 h-8 border-2 border-neutral-300 dark:border-neutral-700 rounded cursor-pointer"
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
+            <label className="text-sm font-medium text-neutral-900 dark:text-neutral-100 w-24">
               Headline:
             </label>
             <input
               type="text"
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="flex-1 p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
             />
             <input
               type="checkbox"
               checked={headlineEnabled}
               onChange={(e) => setHeadlineEnabled(e.target.checked)}
-              className="w-4 h-4 text-blue-600"
+              className="w-4 h-4 text-green-600 accent-green-600"
             />
           </div>
 
           <div className="flex items-start gap-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24 pt-2">
+            <label className="text-sm font-medium text-neutral-900 dark:text-neutral-100 w-24 pt-2">
               Text:
             </label>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={3}
-              className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="flex-1 p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 resize-none bg-white dark:bg-neutral-900 text-black dark:text-white"
             />
             <input
               type="checkbox"
               checked={textEnabled}
               onChange={(e) => setTextEnabled(e.target.checked)}
-              className="w-4 h-4 text-blue-600 mt-2"
+              className="w-4 h-4 text-green-600 accent-green-600 mt-2"
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
+            <label className="text-sm font-medium text-neutral-900 dark:text-neutral-100 w-24">
               Icon:
             </label>
-            <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800">
+            <button className="px-4 py-2 border-2 border-neutral-300 dark:border-neutral-700 rounded-md text-sm font-medium text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900">
               Upload
             </button>
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
+            <label className="text-sm font-medium text-neutral-900 dark:text-neutral-100 w-24">
               Cancel Button:
             </label>
             <input
               type="text"
               value={cancelButton}
               onChange={(e) => setCancelButton(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="flex-1 p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
             />
             <input
               type="color"
               value={cancelBgColor}
               onChange={(e) => setCancelBgColor(e.target.value)}
-              className="w-6 h-6 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+              className="w-6 h-6 border-2 border-neutral-300 dark:border-neutral-700 rounded cursor-pointer"
             />
             <input
               type="color"
               value={cancelTextColor}
               onChange={(e) => setCancelTextColor(e.target.value)}
-              className="w-6 h-6 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+              className="w-6 h-6 border-2 border-neutral-300 dark:border-neutral-700 rounded cursor-pointer"
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
+            <label className="text-sm font-medium text-neutral-900 dark:text-neutral-100 w-24">
               Approve Button:
             </label>
             <input
               type="text"
               value={approveButton}
               onChange={(e) => setApproveButton(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="flex-1 p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
             />
             <input
               type="color"
               value={approveBgColor}
               onChange={(e) => setApproveBgColor(e.target.value)}
-              className="w-6 h-6 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+              className="w-6 h-6 border-2 border-neutral-300 dark:border-neutral-700 rounded cursor-pointer"
             />
             <input
               type="color"
               value={approveTextColor}
               onChange={(e) => setApproveTextColor(e.target.value)}
-              className="w-6 h-6 border border-gray-300 dark:border-gray-600 rounded cursor-pointer"
+              className="w-6 h-6 border-2 border-neutral-300 dark:border-neutral-700 rounded cursor-pointer"
             />
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-24">
+            <label className="text-sm font-medium text-neutral-900 dark:text-neutral-100 w-24">
               Re-prompt Delay:
             </label>
             <input
               type="number"
               value={rePromptDelay}
               onChange={(e) => setRePromptDelay(e.target.value)}
-              className="w-20 p-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-20 p-2 border-2 border-neutral-300 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600 bg-white dark:bg-neutral-900 text-black dark:text-white"
             />
-            <span className="text-sm text-gray-600 dark:text-gray-400">day(s)</span>
+            <span className="text-sm text-neutral-700 dark:text-neutral-300">day(s)</span>
           </div>
         </div>
       </div>
@@ -412,12 +430,12 @@ export default function Optinp() {
       {/* Preview a la derecha */}
       <div className="flex-1 max-w-lg">
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-neutral-900 dark:text-neutral-100 mb-2">
             Preview:
           </label>
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-900 p-8 rounded-lg h-96 flex items-center justify-center border border-gray-200 dark:border-gray-700">
+        <div className="bg-neutral-100 dark:bg-neutral-900 p-8 rounded-lg h-96 flex items-center justify-center border-2 border-neutral-300 dark:border-neutral-700">
           {selectedType === "lightbox1" && (
             <div
               className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full"
@@ -425,15 +443,15 @@ export default function Optinp() {
             >
               <div className="text-center">
                 <div className="mb-4">
-                  <div className="w-12 h-12 mx-auto bg-gray-200 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 mx-auto bg-neutral-200 dark:bg-neutral-700 rounded-full flex items-center justify-center">
                     <span className="text-2xl">🔔</span>
                   </div>
                 </div>
                 {headline && headlineEnabled && (
-                  <h3 className="text-lg font-semibold mb-2">{headline}</h3>
+                  <h3 className="text-lg font-semibold mb-2 text-neutral-900 dark:text-neutral-100">{headline}</h3>
                 )}
                 {text && textEnabled && (
-                  <p className="text-gray-600 mb-6 text-sm">{text}</p>
+                  <p className="text-neutral-700 dark:text-neutral-300 mb-6 text-sm">{text}</p>
                 )}
                 <div className="flex gap-3 justify-center">
                   <button
@@ -463,18 +481,18 @@ export default function Optinp() {
           )}
 
           {selectedType === "lightbox2" && (
-            <div className="bg-white p-4 rounded-lg shadow-lg max-w-xs w-full">
-              <div className="h-2 bg-blue-400 rounded mb-4"></div>
-              <p className="text-sm text-gray-600 mb-4">{text}</p>
+            <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow-lg max-w-xs w-full border-2 border-neutral-300 dark:border-neutral-700">
+              <div className="h-2 bg-green-600 rounded mb-4"></div>
+              <p className="text-sm text-neutral-700 dark:text-neutral-300 mb-4">{text}</p>
               <div className="flex gap-2 justify-end">
                 <button
-                  className="px-3 py-1 text-xs border rounded hover:bg-gray-50"
+                  className="px-3 py-1 text-xs border-2 border-neutral-300 dark:border-neutral-600 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
                   onClick={() => console.log('Usuario canceló la suscripción')}
                 >
                   {cancelButton}
                 </button>
                 <button
-                  className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                  className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                   onClick={handleSubscribe}
                   disabled={loading || !selectedSite || isSubscribed}
                 >
@@ -485,9 +503,9 @@ export default function Optinp() {
           )}
 
           {selectedType === "bellIcon" && (
-            <div className="bg-white p-4 rounded-lg shadow-lg">
+            <div className="bg-white dark:bg-neutral-800 p-4 rounded-lg shadow-lg border-2 border-neutral-300 dark:border-neutral-700">
               <button
-                className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 disabled:opacity-50"
+                className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white hover:bg-green-700 disabled:opacity-50"
                 onClick={handleSubscribe}
                 disabled={loading || !selectedSite || isSubscribed}
                 title={isSubscribed ? 'Ya estás suscrito' : 'Suscribirse a notificaciones'}
@@ -501,7 +519,7 @@ export default function Optinp() {
         {/* Botones de acción */}
         <div className="mt-6 space-y-3">
           <button
-            className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             onClick={handleSaveConfig}
             disabled={isSaving || !selectedSite}
           >
@@ -509,7 +527,7 @@ export default function Optinp() {
           </button>
 
           <button
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             onClick={async () => {
               try {
                 let script;
@@ -538,11 +556,17 @@ export default function Optinp() {
           </button>
 
           <button
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition-colors"
+            className="w-full border-2 border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100 px-4 py-2 rounded-md transition-colors font-medium"
             onClick={() => {
-              const config = generatePreviewUrl();
-              window.open(config, '_blank');
+              if (!selectedSite) {
+                alert('⚠️ Selecciona un sitio primero');
+                return;
+              }
+              const url = generatePreviewUrl();
+              console.log('Abriendo vista previa:', url);
+              window.open(url, '_blank');
             }}
+            disabled={!selectedSite}
           >
             Vista Previa en Sitio Web
           </button>
