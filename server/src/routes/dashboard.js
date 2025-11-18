@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import logger from '../config/logger.js';
+import { sanitizeForLike } from '../middleware/sanitization.js';
 
 const router = express.Router();
 
@@ -44,45 +45,55 @@ router.get('/analytics', authenticateToken, async (req, res) => {
  * Obtener analytics globales para administradores
  */
 async function getGlobalAnalytics(pool, days, siteId = null) {
-    // Condiciones adicionales para filtrar por sitio
-    const siteCondition = siteId ? `AND site_id = ${siteId}` : '';
-    const userSiteCondition = siteId ? `AND st.id = ${siteId}` : '';
+    // Validar y sanitizar días (debe ser un entero positivo)
+    const validDays = Math.max(1, Math.min(parseInt(days) || 30, 365));
+
+    // Construir condiciones y parámetros de forma segura
+    const queryParams = [validDays];
+    let paramIndex = 2;
+
+    const siteCondition = siteId ? `AND site_id = $${paramIndex}` : '';
+    const userSiteCondition = siteId ? `AND st.id = $${paramIndex}` : '';
+    if (siteId) {
+        queryParams.push(parseInt(siteId));
+        paramIndex++;
+    }
 
     // Generar datos por día para los últimos N días
     const analyticsQuery = `
     WITH date_series AS (
       SELECT generate_series(
-        CURRENT_DATE - INTERVAL '${days} days',
+        CURRENT_DATE - ($1 || ' days')::INTERVAL,
         CURRENT_DATE,
         '1 day'::interval
       )::date as date
     ),
     daily_users AS (
-      SELECT 
+      SELECT
         DATE(u.created_at) as date,
         COUNT(*) as new_users
       FROM users u
       ${siteId ? 'JOIN sites st ON u.id = st.user_id' : ''}
-      WHERE u.created_at >= CURRENT_DATE - INTERVAL '${days} days' ${userSiteCondition}
+      WHERE u.created_at >= CURRENT_DATE - ($1 || ' days')::INTERVAL ${userSiteCondition}
       GROUP BY DATE(u.created_at)
     ),
     daily_subscriptions AS (
-      SELECT 
+      SELECT
         DATE(created_at) as date,
         COUNT(*) as new_subscriptions
       FROM subscriptions
-      WHERE created_at >= CURRENT_DATE - INTERVAL '${days} days' ${siteCondition}
+      WHERE created_at >= CURRENT_DATE - ($1 || ' days')::INTERVAL ${siteCondition}
       GROUP BY DATE(created_at)
     ),
     daily_campaigns AS (
-      SELECT 
+      SELECT
         DATE(created_at) as date,
         COUNT(*) as campaigns_created
       FROM campaigns
-      WHERE created_at >= CURRENT_DATE - INTERVAL '${days} days' ${siteCondition}
+      WHERE created_at >= CURRENT_DATE - ($1 || ' days')::INTERVAL ${siteCondition}
       GROUP BY DATE(created_at)
     )
-    SELECT 
+    SELECT
       ds.date,
       COALESCE(du.new_users, 0) as users,
       COALESCE(dsub.new_subscriptions, 0) as subscriptions,
@@ -94,7 +105,7 @@ async function getGlobalAnalytics(pool, days, siteId = null) {
     ORDER BY ds.date
   `;
 
-    const result = await pool.query(analyticsQuery);
+    const result = await pool.query(analyticsQuery, queryParams);
 
     return result.rows.map(row => ({
         date: row.date.toISOString().split('T')[0],
@@ -108,42 +119,48 @@ async function getGlobalAnalytics(pool, days, siteId = null) {
  * Obtener analytics específicos del usuario
  */
 async function getUserAnalytics(pool, userId, days, siteId = null) {
-    // Condición adicional para filtrar por sitio específico
-    const siteCondition = siteId ? `AND st.id = $2 AND s.site_id = $2` : '';
-    const campaignSiteCondition = siteId ? `AND s.id = $2 AND c.site_id = $2` : '';
+    // Validar y sanitizar días
+    const validDays = Math.max(1, Math.min(parseInt(days) || 30, 365));
 
-    const queryParams = [userId];
+    // Construir condiciones y parámetros de forma segura
+    const queryParams = [userId, validDays];
+    let paramIndex = 3;
+
+    const siteCondition = siteId ? `AND st.id = $${paramIndex} AND s.site_id = $${paramIndex}` : '';
+    const campaignSiteCondition = siteId ? `AND s.id = $${paramIndex} AND c.site_id = $${paramIndex}` : '';
+
     if (siteId) {
-        queryParams.push(siteId);
+        queryParams.push(parseInt(siteId));
+        paramIndex++;
     }
 
     const analyticsQuery = `
     WITH date_series AS (
       SELECT generate_series(
-        CURRENT_DATE - INTERVAL '${days} days',
+        CURRENT_DATE - ($2 || ' days')::INTERVAL,
         CURRENT_DATE,
         '1 day'::interval
       )::date as date
     ),
     user_subscriptions AS (
-      SELECT 
+      SELECT
         DATE(s.created_at) as date,
         COUNT(*) as new_subscriptions
       FROM subscriptions s
       JOIN sites st ON s.site_id = st.id
-      WHERE st.user_id = $1 AND s.created_at >= CURRENT_DATE - INTERVAL '${days} days' ${siteCondition}
+      WHERE st.user_id = $1 AND s.created_at >= CURRENT_DATE - ($2 || ' days')::INTERVAL ${siteCondition}
       GROUP BY DATE(s.created_at)
     ),
     user_campaigns AS (
-      SELECT 
+      SELECT
         DATE(c.created_at) as date,
         COUNT(*) as campaigns_created
       FROM campaigns c
       JOIN sites s ON c.site_id = s.id
-      WHERE s.user_id = $1 AND c.created_at >= CURRENT_DATE - INTERVAL '${days} days' ${campaignSiteCondition}
+      WHERE s.user_id = $1 AND c.created_at >= CURRENT_DATE - ($2 || ' days')::INTERVAL ${campaignSiteCondition}
       GROUP BY DATE(c.created_at)
     )
-    SELECT 
+    SELECT
       ds.date,
       COALESCE(us.new_subscriptions, 0) as subscriptions,
       COALESCE(uc.campaigns_created, 0) as campaigns
@@ -207,9 +224,12 @@ router.get('/metrics', authenticateToken, async (req, res) => {
  */
 async function getGlobalMetrics(pool, siteId = null) {
     try {
-        // Construir condiciones basadas en siteId
-        const siteCondition = siteId ? `WHERE site_id = ${siteId}` : '';
-        const siteJoinCondition = siteId ? `AND s.id = ${siteId}` : '';
+        // Validar siteId si se proporciona
+        const validSiteId = siteId ? parseInt(siteId) : null;
+
+        // Construir condiciones basadas en siteId de forma segura
+        const siteCondition = validSiteId ? `WHERE site_id = $1` : '';
+        const siteJoinCondition = validSiteId ? `AND s.id = $1` : '';
 
         const [
             totalUsersResult,
@@ -222,53 +242,70 @@ async function getGlobalMetrics(pool, siteId = null) {
             recentCampaignsResult
         ] = await Promise.all([
             // Total de usuarios (solo para sitio específico si se especifica)
-            siteId ?
-                pool.query('SELECT COUNT(DISTINCT u.id) FROM users u JOIN sites s ON u.id = s.user_id WHERE s.id = $1', [siteId]) :
-                pool.query('SELECT COUNT(*) FROM users'),
+            validSiteId ?
+                pool.query('SELECT COUNT(DISTINCT u.id) as count FROM users u JOIN sites s ON u.id = s.user_id WHERE s.id = $1', [validSiteId]) :
+                pool.query('SELECT COUNT(*) as count FROM users'),
 
             // Usuarios activos (últimos 30 días)
-            siteId ?
+            validSiteId ?
                 pool.query(`
-                    SELECT COUNT(DISTINCT u.id) FROM users u 
-                    JOIN sites s ON u.id = s.user_id 
+                    SELECT COUNT(DISTINCT u.id) as count FROM users u
+                    JOIN sites s ON u.id = s.user_id
                     WHERE u.created_at >= NOW() - INTERVAL '30 days' AND s.id = $1
-                `, [siteId]) :
+                `, [validSiteId]) :
                 pool.query(`
-                    SELECT COUNT(*) FROM users 
+                    SELECT COUNT(*) as count FROM users
                     WHERE created_at >= NOW() - INTERVAL '30 days'
                 `),
 
             // Total de sitios
-            siteId ?
+            validSiteId ?
                 pool.query('SELECT 1 as count') : // Si filtramos por sitio, solo hay 1 sitio
-                pool.query('SELECT COUNT(*) FROM sites'),
+                pool.query('SELECT COUNT(*) as count FROM sites'),
 
             // Sitios activos
-            siteId ?
-                pool.query('SELECT CASE WHEN is_active THEN 1 ELSE 0 END as count FROM sites WHERE id = $1', [siteId]) :
-                pool.query('SELECT COUNT(*) FROM sites WHERE is_active = true'),
+            validSiteId ?
+                pool.query('SELECT CASE WHEN is_active THEN 1 ELSE 0 END as count FROM sites WHERE id = $1', [validSiteId]) :
+                pool.query('SELECT COUNT(*) as count FROM sites WHERE is_active = true'),
 
             // Total de suscripciones
-            pool.query(`SELECT COUNT(*) FROM subscriptions ${siteCondition}`),
+            validSiteId ?
+                pool.query('SELECT COUNT(*) as count FROM subscriptions WHERE site_id = $1', [validSiteId]) :
+                pool.query('SELECT COUNT(*) as count FROM subscriptions'),
 
             // Total de campañas
-            pool.query(`SELECT COUNT(*) FROM campaigns ${siteCondition}`),
+            validSiteId ?
+                pool.query('SELECT COUNT(*) as count FROM campaigns WHERE site_id = $1', [validSiteId]) :
+                pool.query('SELECT COUNT(*) as count FROM campaigns'),
 
             // Estadísticas de campañas por estado
-            pool.query(`
-                SELECT 
-                    status,
-                    COUNT(*) as count
-                FROM campaigns 
-                ${siteCondition}
-                GROUP BY status
-            `),
+            validSiteId ?
+                pool.query(`
+                    SELECT
+                        status,
+                        COUNT(*) as count
+                    FROM campaigns
+                    WHERE site_id = $1
+                    GROUP BY status
+                `, [validSiteId]) :
+                pool.query(`
+                    SELECT
+                        status,
+                        COUNT(*) as count
+                    FROM campaigns
+                    GROUP BY status
+                `),
 
             // Campañas recientes (últimos 7 días)
-            pool.query(`
-                SELECT COUNT(*) FROM campaigns 
-                WHERE created_at >= NOW() - INTERVAL '7 days' ${siteId ? `AND site_id = ${siteId}` : ''}
-            `)
+            validSiteId ?
+                pool.query(`
+                    SELECT COUNT(*) as count FROM campaigns
+                    WHERE created_at >= NOW() - INTERVAL '7 days' AND site_id = $1
+                `, [validSiteId]) :
+                pool.query(`
+                    SELECT COUNT(*) as count FROM campaigns
+                    WHERE created_at >= NOW() - INTERVAL '7 days'
+                `)
         ]);
 
         // Calcular métricas adicionales con valores por defecto

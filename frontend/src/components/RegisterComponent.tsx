@@ -42,8 +42,33 @@ export function RegisterCard() {
         return
       }
 
-      if (password.length < 6) {
-        setError('La contraseña debe tener al menos 6 caracteres')
+      // SECURITY: Password validation matching backend requirements
+      if (password.length < 12) {
+        setError('La contraseña debe tener al menos 12 caracteres')
+        return
+      }
+
+      // Verificar que contenga mayúscula
+      if (!/[A-Z]/.test(password)) {
+        setError('La contraseña debe contener al menos una letra mayúscula')
+        return
+      }
+
+      // Verificar que contenga minúscula
+      if (!/[a-z]/.test(password)) {
+        setError('La contraseña debe contener al menos una letra minúscula')
+        return
+      }
+
+      // Verificar que contenga número
+      if (!/[0-9]/.test(password)) {
+        setError('La contraseña debe contener al menos un número')
+        return
+      }
+
+      // Verificar que contenga carácter especial
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+        setError('La contraseña debe contener al menos un carácter especial (!@#$%^&*...)')
         return
       }
 

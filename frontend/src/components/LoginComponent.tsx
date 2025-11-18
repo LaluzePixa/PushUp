@@ -47,7 +47,44 @@ export function CardDemo() {
 
         // Obtener URL de redirect si existe
         const urlParams = new URLSearchParams(window.location.search)
-        const redirectUrl = urlParams.get('redirect') || '/select-site'
+        const unsafeRedirect = urlParams.get('redirect')
+
+        // Validar redirect URL - solo permitir rutas internas
+        const allowedPaths = [
+          '/select-site',
+          '/dashboard',
+          '/campaigns',
+          '/sites',
+          '/users',
+          '/analytics',
+          '/settings',
+          '/notifications',
+          '/segments',
+          '/integrations'
+        ]
+
+        let redirectUrl = '/select-site' // Default seguro
+
+        if (unsafeRedirect) {
+          // Validar que sea una ruta relativa (empieza con /)
+          if (unsafeRedirect.startsWith('/')) {
+            // Extraer la ruta base (sin query params)
+            const basePath = unsafeRedirect.split('?')[0].split('#')[0]
+
+            // Verificar si está en la whitelist
+            const isAllowed = allowedPaths.some(path =>
+              basePath === path || basePath.startsWith(path + '/')
+            )
+
+            if (isAllowed) {
+              redirectUrl = unsafeRedirect
+            } else {
+              console.warn('⚠️ Redirect URL no permitida:', unsafeRedirect)
+            }
+          } else {
+            console.warn('⚠️ Redirect URL debe ser relativa:', unsafeRedirect)
+          }
+        }
 
         console.log('🔄 Redirigiendo a:', redirectUrl)
 

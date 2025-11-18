@@ -1,5 +1,17 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { z } from 'zod'
+
+// Zod schema for session validation
+const SessionSchema = z.object({
+    user: z.object({
+        id: z.number(),
+        email: z.string().email(),
+        role: z.enum(['user', 'admin', 'superadmin']),
+        isActive: z.boolean().optional()
+    }),
+    expiresAt: z.string().datetime()
+})
 
 /**
  * Next.js Proxy para proteger rutas
@@ -43,7 +55,18 @@ export function proxy(request: NextRequest) {
 
     // Validar que la sesión es válida (no expirada)
     try {
-        const session = JSON.parse(sessionCookie.value)
+        // SECURITY: Parse and validate session data with Zod
+        const parsedData = JSON.parse(sessionCookie.value)
+        const validationResult = SessionSchema.safeParse(parsedData)
+
+        if (!validationResult.success) {
+            console.error('❌ Estructura de sesión inválida:', validationResult.error)
+            const response = NextResponse.redirect(new URL('/login', request.url))
+            response.cookies.delete('session')
+            return response
+        }
+
+        const session = validationResult.data
         const expiresAt = new Date(session.expiresAt)
         const now = new Date()
 

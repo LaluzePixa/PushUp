@@ -40,15 +40,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.log('✅ Usuario autenticado:', authStatus.user.email);
                 setUser(authStatus.user);
 
-                // Verificar que también tenemos un token válido en localStorage
-                if (typeof window !== 'undefined') {
-                    const token = localStorage.getItem('auth_token');
-                    if (!token) {
-                        console.warn('⚠️ Sesión sin token JWT, cerrando sesión...');
-                        await logout();
-                        return;
-                    }
-                }
+                // SECURITY: Autenticación ahora basada en HTTP-only cookies
+                // No necesitamos verificar localStorage (ya no usamos tokens ahí)
             } else {
                 console.log('❌ No hay sesión válida');
                 setUser(null);
@@ -109,10 +102,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.log('✅ Login exitoso, estableciendo usuario');
                 setUser(data.user);
 
-                // Guardar token en localStorage para llamadas directas al backend
-                if (data.token && typeof window !== 'undefined') {
-                    localStorage.setItem('auth_token', data.token);
-                    console.log('🔑 Token guardado en localStorage');
+                // SECURITY: No guardamos el token en localStorage (vulnerabilidad XSS)
+                // El servidor debe configurar el token en una cookie HTTP-only
+                if (data.token) {
+                    console.log('🔒 Token recibido (será manejado por servidor en HTTP-only cookie)');
                 }
 
                 return { success: true };
@@ -154,10 +147,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.log('✅ Registro exitoso, estableciendo usuario');
                 setUser(data.user);
 
-                // Guardar token en localStorage para llamadas directas al backend
-                if (data.token && typeof window !== 'undefined') {
-                    localStorage.setItem('auth_token', data.token);
-                    console.log('🔑 Token guardado en localStorage');
+                // SECURITY: No guardamos el token en localStorage (vulnerabilidad XSS)
+                // El servidor debe configurar el token en una cookie HTTP-only
+                if (data.token) {
+                    console.log('🔒 Token recibido (será manejado por servidor en HTTP-only cookie)');
                 }
 
                 return { success: true };

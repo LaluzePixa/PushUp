@@ -6,7 +6,19 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { z } from 'zod'
 import type { Session } from '@/lib/auth'
+
+// Zod schema for session validation
+const SessionSchema = z.object({
+    user: z.object({
+        id: z.number(),
+        email: z.string().email(),
+        role: z.enum(['user', 'admin', 'superadmin']),
+        isActive: z.boolean().optional()
+    }),
+    expiresAt: z.string().datetime()
+})
 
 /**
  * Creates a new session with HTTP-only cookie
@@ -40,7 +52,17 @@ export async function getSession(): Promise<Session | null> {
     }
 
     try {
-        const session = JSON.parse(sessionCookie.value) as Session
+        // SECURITY: Parse and validate session data with Zod
+        const parsedData = JSON.parse(sessionCookie.value)
+        const validationResult = SessionSchema.safeParse(parsedData)
+
+        if (!validationResult.success) {
+            console.error('Invalid session structure:', validationResult.error)
+            await deleteSession()
+            return null
+        }
+
+        const session = validationResult.data as Session
 
         // Check if session is expired
         if (new Date() > new Date(session.expiresAt)) {

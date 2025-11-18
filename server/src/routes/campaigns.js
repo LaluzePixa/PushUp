@@ -1,6 +1,7 @@
 import express from 'express';
 import { CronJob } from 'cron';
 import webpush from 'web-push';
+import validator from 'validator';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
 import { getWorkerPool } from '../services/worker-pool.js';
 import logger from '../config/logger.js';
@@ -52,6 +53,42 @@ const validateCampaign = (data) => {
 
   if (data.scheduledAt && new Date(data.scheduledAt) <= new Date()) {
     errors.push('La fecha de programación debe ser futura');
+  }
+
+  // SECURITY: Validate URL fields to prevent XSS and malicious redirects
+  const urlFields = [
+    { field: 'iconUrl', name: 'URL del ícono' },
+    { field: 'imageUrl', name: 'URL de la imagen' },
+    { field: 'clickUrl', name: 'URL de click' },
+    { field: 'badgeUrl', name: 'URL del badge' }
+  ];
+
+  urlFields.forEach(({ field, name }) => {
+    if (data[field]) {
+      // Validate URL format
+      if (!validator.isURL(data[field], {
+        protocols: ['http', 'https'],
+        require_protocol: true,
+        require_valid_protocol: true,
+        allow_protocol_relative_urls: false
+      })) {
+        errors.push(`${name} no es una URL válida (debe empezar con http:// o https://)`);
+      }
+    }
+  });
+
+  // Validate action URLs if present
+  if (data.actions && Array.isArray(data.actions)) {
+    data.actions.forEach((action, index) => {
+      if (action.url && !validator.isURL(action.url, {
+        protocols: ['http', 'https'],
+        require_protocol: true,
+        require_valid_protocol: true,
+        allow_protocol_relative_urls: false
+      })) {
+        errors.push(`URL de acción #${index + 1} no es válida (debe empezar con http:// o https://)`);
+      }
+    });
   }
 
   return errors;

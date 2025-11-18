@@ -31,19 +31,34 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Security: Helmet adds security headers to protect against common vulnerabilities
+// SECURITY: Different CSP for development vs production
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"], // Permitir scripts inline para demo.html
+      // SECURITY: Only allow 'unsafe-inline' in development for demo.html
+      // Production should use nonces or hashes for inline styles/scripts
+      styleSrc: isDevelopment
+        ? ["'self'", "'unsafe-inline'"]
+        : ["'self'"],
+      scriptSrc: isDevelopment
+        ? ["'self'", "'unsafe-inline'"]
+        : ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'"],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
+      upgradeInsecureRequests: isDevelopment ? [] : null, // Upgrade HTTP to HTTPS in production
     },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
   },
   crossOriginEmbedderPolicy: false, // Allow push notifications to work
   crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow resources from other origins

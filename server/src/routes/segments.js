@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
 import logger from '../config/logger.js';
+import { sanitizeForLike } from '../middleware/sanitization.js';
 
 const router = express.Router();
 
