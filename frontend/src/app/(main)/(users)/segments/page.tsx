@@ -145,27 +145,6 @@ export default function SegmentsPage() {
                 />
             </div>
 
-            {/* Site Context Info */}
-            {selectedSite && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <div className="flex items-center space-x-2">
-                        <div className="bg-blue-100 dark:bg-blue-800 p-2 rounded-lg">
-                            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                                Viendo segmentos para: {selectedSite.name}
-                            </h3>
-                            <p className="text-sm text-blue-700 dark:text-blue-300">
-                                Dominio: {selectedSite.domain} • Solo se muestran segmentos de este sitio
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Segments Section */}
             <div className="bg-white dark:bg-[#222] rounded-lg border border-red">
                 {/* Section Header */}

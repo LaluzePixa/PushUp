@@ -150,7 +150,7 @@ const executeCampaign = async (pool, campaignId) => {
           `WHERE ${whereConditions.join(' AND ')}` : '';
 
         const allSubscriptionsQuery = `
-          SELECT id, endpoint, p256dh, auth, user_agent, ip, site_id, created_at
+          SELECT id, endpoint, p256dh, auth, user_agent, ip, site_id, created_at, country, state, city
           FROM subscriptions 
           ${whereClause}
           ORDER BY created_at DESC
@@ -161,9 +161,13 @@ const executeCampaign = async (pool, campaignId) => {
 
         // Filtrar usando las condiciones del segmento
         const { evaluateSegmentConditions } = await import('./segments.js');
-        subscriptions = allSubscriptions.filter(sub =>
+        let filteredSubscriptions = allSubscriptions.filter(sub =>
           evaluateSegmentConditions(sub, segment.conditions)
         );
+
+        // Aplicar límite de max_size del segmento
+        const maxSize = segment.max_size || 10000;
+        subscriptions = filteredSubscriptions.slice(0, maxSize);
       }
     } else {
       // Usar filtros básicos por site_id

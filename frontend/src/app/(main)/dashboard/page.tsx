@@ -6,6 +6,7 @@ import Chart from "@/components/Chart"
 import InfoCard from "@/components/InfoCard"
 import MetricCard from "@/components/MetricCard"
 import { MetricsGrid } from "@/components/MetricsGrid"
+import { RecentSubscribers } from "@/components/RecentSubscribers"
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
@@ -53,6 +54,16 @@ export default function DashboardPage() {
       </div>
 
       <div>
+        {/* Métricas de rendimiento */}
+        <MetricsGrid
+          metrics={['impressions', 'interactions', 'ctr']}
+          className="mb-8"
+          columns={3}
+          color={{ light: "#8b5cf6", dark: "#6d28d9" }}
+        />
+      </div>
+
+      <div>
         {/* Métricas secundarias */}
         <MetricsGrid
           metrics={['total_sites', 'active_sites', 'recent_campaigns']}
@@ -67,7 +78,7 @@ export default function DashboardPage() {
       </div>
 
       <div>
-        <MetricCard metricName="total_users" />
+        <RecentSubscribers />
       </div>
     </div>
   )

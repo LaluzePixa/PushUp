@@ -2,65 +2,146 @@ import express from 'express';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.js';
 import logger from '../config/logger.js';
 import { sanitizeForLike } from '../utils/sanitize.js';
+import { validateSegmentData, SEGMENT_LIMITS } from '../types/segmentConditions.js';
 
 const router = express.Router();
 
-// Validación de segmento
+// Validación de segmento (usa el validador tipado)
 const validateSegment = (data) => {
-  const errors = [];
-
-  if (!data.name?.trim()) errors.push('El nombre es requerido');
-  if (!data.conditions || typeof data.conditions !== 'object') {
-    errors.push('Las condiciones son requeridas');
-  }
-
-  return errors;
+  return validateSegmentData(data);
 };
 
-// Función para evaluar condiciones de segmento
+/**
+ * Evalúa si una suscripción cumple con las condiciones del segmento
+ * Soporta múltiples tipos de condiciones con operadores flexibles
+ * 
+ * @param {Object} subscription - Objeto de suscripción con todos los campos
+ * @param {Object} conditions - Objeto de condiciones del segmento
+ * @returns {boolean} - true si cumple todas las condiciones (AND lógico)
+ */
 const evaluateSegmentConditions = (subscription, conditions) => {
   if (!conditions || Object.keys(conditions).length === 0) {
     return true; // Sin condiciones = incluir todos
   }
 
-  // Evaluar condiciones por campo
+  // Evaluar condiciones por campo (AND lógico entre campos)
   for (const [field, condition] of Object.entries(conditions)) {
+    let fieldMatch = false;
+
     switch (field) {
-      case 'userAgent':
-        if (condition.contains && !subscription.user_agent?.toLowerCase().includes(condition.contains.toLowerCase())) {
-          return false;
-        }
-        if (condition.notContains && subscription.user_agent?.toLowerCase().includes(condition.notContains.toLowerCase())) {
-          return false;
-        }
-        break;
+      case 'userAgent': {
+        const userAgent = subscription.user_agent?.toLowerCase() || '';
 
-      case 'createdAt':
+        if (condition.equals !== undefined) {
+          fieldMatch = userAgent === condition.equals.toLowerCase();
+        } else if (condition.notEquals !== undefined) {
+          fieldMatch = userAgent !== condition.notEquals.toLowerCase();
+        } else if (condition.contains !== undefined) {
+          fieldMatch = userAgent.includes(condition.contains.toLowerCase());
+        } else if (condition.notContains !== undefined) {
+          fieldMatch = !userAgent.includes(condition.notContains.toLowerCase());
+        } else if (condition.in !== undefined) {
+          fieldMatch = condition.in.some(val => userAgent.includes(val.toLowerCase()));
+        } else if (condition.notIn !== undefined) {
+          fieldMatch = !condition.notIn.some(val => userAgent.includes(val.toLowerCase()));
+        }
+
+        if (!fieldMatch) return false;
+        break;
+      }
+
+      case 'createdAt': {
         const createdAt = new Date(subscription.created_at);
-        if (condition.after && createdAt <= new Date(condition.after)) {
-          return false;
-        }
-        if (condition.before && createdAt >= new Date(condition.before)) {
-          return false;
-        }
-        break;
 
-      case 'siteId':
-        if (condition.equals && subscription.site_id !== condition.equals) {
-          return false;
+        if (condition.after !== undefined) {
+          fieldMatch = createdAt > new Date(condition.after);
+        } else if (condition.before !== undefined) {
+          fieldMatch = createdAt < new Date(condition.before);
+        } else if (condition.between !== undefined && Array.isArray(condition.between)) {
+          const [start, end] = condition.between;
+          fieldMatch = createdAt >= new Date(start) && createdAt <= new Date(end);
         }
-        if (condition.in && !condition.in.includes(subscription.site_id)) {
-          return false;
-        }
+
+        if (!fieldMatch) return false;
         break;
+      }
+
+      case 'siteId': {
+        const siteId = subscription.site_id;
+
+        if (condition.equals !== undefined) {
+          fieldMatch = siteId === condition.equals;
+        } else if (condition.notEquals !== undefined) {
+          fieldMatch = siteId !== condition.notEquals;
+        } else if (condition.in !== undefined) {
+          fieldMatch = condition.in.includes(siteId);
+        } else if (condition.notIn !== undefined) {
+          fieldMatch = !condition.notIn.includes(siteId);
+        }
+
+        if (!fieldMatch) return false;
+        break;
+      }
+
+      case 'country': {
+        const country = subscription.country?.toLowerCase() || '';
+
+        if (condition.equals !== undefined) {
+          fieldMatch = country === condition.equals.toLowerCase();
+        } else if (condition.notEquals !== undefined) {
+          fieldMatch = country !== condition.notEquals.toLowerCase();
+        } else if (condition.in !== undefined) {
+          fieldMatch = condition.in.some(val => country === val.toLowerCase());
+        } else if (condition.notIn !== undefined) {
+          fieldMatch = !condition.notIn.some(val => country === val.toLowerCase());
+        }
+
+        if (!fieldMatch) return false;
+        break;
+      }
+
+      case 'state': {
+        const state = subscription.state?.toLowerCase() || '';
+
+        if (condition.equals !== undefined) {
+          fieldMatch = state === condition.equals.toLowerCase();
+        } else if (condition.notEquals !== undefined) {
+          fieldMatch = state !== condition.notEquals.toLowerCase();
+        } else if (condition.in !== undefined) {
+          fieldMatch = condition.in.some(val => state === val.toLowerCase());
+        } else if (condition.notIn !== undefined) {
+          fieldMatch = !condition.notIn.some(val => state === val.toLowerCase());
+        }
+
+        if (!fieldMatch) return false;
+        break;
+      }
+
+      case 'city': {
+        const city = subscription.city?.toLowerCase() || '';
+
+        if (condition.equals !== undefined) {
+          fieldMatch = city === condition.equals.toLowerCase();
+        } else if (condition.notEquals !== undefined) {
+          fieldMatch = city !== condition.notEquals.toLowerCase();
+        } else if (condition.in !== undefined) {
+          fieldMatch = condition.in.some(val => city === val.toLowerCase());
+        } else if (condition.notIn !== undefined) {
+          fieldMatch = !condition.notIn.some(val => city === val.toLowerCase());
+        }
+
+        if (!fieldMatch) return false;
+        break;
+      }
 
       default:
-        // Campo no reconocido, ignorar
+        // Campo no reconocido, log warning pero no falla
+        logger.warn(`Campo de condición desconocido: ${field}`);
         break;
     }
   }
 
-  return true;
+  return true; // Todas las condiciones cumplidas
 };
 
 // GET /segments - Listar segmentos
@@ -176,7 +257,8 @@ router.post('/', authenticateToken, async (req, res) => {
       name,
       description,
       siteId,
-      conditions
+      conditions,
+      maxSize
     } = req.body;
 
     // Validar que el sitio pertenece al usuario (si se especifica)
@@ -194,10 +276,14 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     }
 
-    // Validar datos
+    // Aplicar default o valor recibido para max_size
+    const finalMaxSize = maxSize !== undefined ? maxSize : SEGMENT_LIMITS.DEFAULT_MAX_SIZE;
+
+    // Validar datos con el nuevo validador
     const validationErrors = validateSegment({
       name,
-      conditions
+      conditions,
+      max_size: finalMaxSize
     });
 
     if (validationErrors.length > 0) {
@@ -208,17 +294,18 @@ router.post('/', authenticateToken, async (req, res) => {
       });
     }
 
-    // Crear segmento
+    // Crear segmento con max_size
     const segmentResult = await pool.query(
-      `INSERT INTO audience_segments (user_id, site_id, name, description, conditions)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO audience_segments (user_id, site_id, name, description, conditions, max_size)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
       [
         req.user.id,
         siteId || null,
         name.trim(),
         description?.trim() || null,
-        JSON.stringify(conditions)
+        JSON.stringify(conditions),
+        finalMaxSize
       ]
     );
 
@@ -233,6 +320,7 @@ router.post('/', authenticateToken, async (req, res) => {
         description: segment.description,
         siteId: segment.site_id,
         conditions: segment.conditions,
+        maxSize: segment.max_size,
         createdAt: segment.created_at
       }
     });

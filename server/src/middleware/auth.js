@@ -30,7 +30,27 @@ export const verifyJWT = createVerifier({
 export const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    let token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    // Si no hay token en el header, intentar obtenerlo de las cookies
+    if (!token && req.cookies) {
+      // Next.js guarda la sesión como JSON en la cookie 'session'
+      const sessionCookie = req.cookies['session'];
+      if (sessionCookie) {
+        try {
+          const sessionData = JSON.parse(sessionCookie);
+          token = sessionData.token; // Extraer el token del objeto de sesión
+        } catch (e) {
+          // Si no se puede parsear, intentar usar la cookie directamente (legacy)
+          token = sessionCookie;
+        }
+      }
+
+      // Fallback a cookie 'auth-token' (legacy)
+      if (!token) {
+        token = req.cookies['auth-token'];
+      }
+    }
 
     if (!token) {
       return res.status(401).json({

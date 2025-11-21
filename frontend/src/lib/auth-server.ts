@@ -17,6 +17,7 @@ const SessionSchema = z.object({
         role: z.enum(['user', 'admin', 'superadmin']),
         isActive: z.boolean().optional()
     }),
+    token: z.string().optional(), // JWT token for API authentication
     expiresAt: z.string().datetime()
 })
 

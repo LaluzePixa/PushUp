@@ -16,27 +16,6 @@ export default function Page() {
                 />
             </div>
 
-            {/* Site Context Info */}
-            {selectedSite && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <div className="flex items-center space-x-2">
-                        <div className="bg-blue-100 dark:bg-blue-800 p-2 rounded-lg">
-                            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                                Viendo suscriptores para: {selectedSite.name}
-                            </h3>
-                            <p className="text-sm text-blue-700 dark:text-blue-300">
-                                Dominio: {selectedSite.domain} • Solo se muestran suscriptores de este sitio
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {!selectedSite && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                     <div className="flex items-center space-x-2">

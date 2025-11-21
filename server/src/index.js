@@ -6,6 +6,7 @@ validateEnv();
 
 import express from 'express';
 import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import pg from 'pg';
 import webpush from 'web-push';
@@ -21,11 +22,13 @@ import segmentsRoutes from './routes/segments.js';
 import dashboardRoutes from './routes/dashboard.js';
 import optinsRoutes from './routes/optins.js';
 import subscriptionBellRoutes from './routes/subscriptionBell.js';
+import emailPromptRoutes from './routes/emailPrompt.js';
 import { authenticateToken, authorizeRoles, optionalAuth } from './middleware/auth.js';
 
 // Importar servicios y configuración
 import CampaignScheduler from './services/campaignScheduler.js';
 import logger from './config/logger.js';
+import { initGeoIP, getGeoData, getClientIP } from './utils/geoip.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -85,6 +88,7 @@ app.use(pinoHttp({
 }));
 
 app.use(bodyParser.json());
+app.use(cookieParser()); // Parse cookies from requests
 
 // CORS Configuration - SECURITY FIX
 // Only allow specific origins from environment variable
@@ -156,6 +160,7 @@ app.use('/segments', segmentsRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/optins', optinsRoutes);
 app.use('/api/subscription-bell', subscriptionBellRoutes);
+app.use('/email-prompt', emailPromptRoutes);
 
 // Rutas públicas
 app.get('/healthz', (_, res) => res.send('ok'));
@@ -199,22 +204,41 @@ app.post('/subscribe', optionalAuth, async (req, res) => {
     }
 
     const userAgent = req.headers['user-agent'] || null;
-    const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').toString();
+    const ip = getClientIP(req);
     const userId = req.user ? req.user.id : null;
 
+    // Obtener datos geográficos de la IP
+    const geoData = getGeoData(ip);
+
+    logger.debug({ ip, geoData }, 'Geolocation data for subscription');
+
     const sql = `
-      INSERT INTO subscriptions (endpoint, p256dh, auth, user_agent, ip, user_id, site_id)
-      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      INSERT INTO subscriptions (endpoint, p256dh, auth, user_agent, ip, user_id, site_id, country, state, city)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
       ON CONFLICT (endpoint)
       DO UPDATE SET 
         p256dh=EXCLUDED.p256dh, 
         auth=EXCLUDED.auth, 
         user_id=EXCLUDED.user_id,
         site_id=EXCLUDED.site_id,
+        country=EXCLUDED.country,
+        state=EXCLUDED.state,
+        city=EXCLUDED.city,
         updated_at=NOW()
       RETURNING id;
     `;
-    const values = [sub.endpoint, sub.keys.p256dh, sub.keys.auth, userAgent, ip, userId, siteId || null];
+    const values = [
+      sub.endpoint,
+      sub.keys.p256dh,
+      sub.keys.auth,
+      userAgent,
+      ip,
+      userId,
+      siteId || null,
+      geoData.country,
+      geoData.state,
+      geoData.city
+    ];
     const r = await pool.query(sql, values);
 
     res.json({
@@ -350,28 +374,40 @@ app.post('/send', authenticateToken, authorizeRoles('admin', 'superadmin'), asyn
 app.get('/admin', (_, res) => res.sendFile(process.cwd() + '/public/admin.html'));
 app.get('/demo', (_, res) => res.sendFile(process.cwd() + '/public/demo.html'));
 
-// Inicializar y arrancar el scheduler de campañas
-const campaignScheduler = new CampaignScheduler(pool);
-campaignScheduler.start();
+// Inicializar GeoIP y arrancar el servidor
+async function startServer() {
+  // Inicializar GeoIP database
+  await initGeoIP();
 
-// Ruta para obtener estadísticas del scheduler
-app.get('/scheduler/stats', authenticateToken, authorizeRoles('admin', 'superadmin'), (req, res) => {
-  res.json(campaignScheduler.getStats());
-});
+  // Inicializar y arrancar el scheduler de campañas
+  const campaignScheduler = new CampaignScheduler(pool);
+  campaignScheduler.start();
 
-// Manejar cierre graceful del servidor
-process.on('SIGINT', () => {
-  logger.info('Received SIGINT, shutting down gracefully...');
-  campaignScheduler.stop();
-  process.exit(0);
-});
+  // Ruta para obtener estadísticas del scheduler
+  app.get('/scheduler/stats', authenticateToken, authorizeRoles('admin', 'superadmin'), (req, res) => {
+    res.json(campaignScheduler.getStats());
+  });
 
-process.on('SIGTERM', () => {
-  logger.info('Received SIGTERM, shutting down gracefully...');
-  campaignScheduler.stop();
-  process.exit(0);
-});
+  // Manejar cierre graceful del servidor
+  process.on('SIGINT', () => {
+    logger.info('Received SIGINT, shutting down gracefully...');
+    campaignScheduler.stop();
+    process.exit(0);
+  });
 
-app.listen(PORT, () => {
-  logger.info({ port: PORT, env: process.env.NODE_ENV }, 'PushSaaS API server started');
+  process.on('SIGTERM', () => {
+    logger.info('Received SIGTERM, shutting down gracefully...');
+    campaignScheduler.stop();
+    process.exit(0);
+  });
+
+  app.listen(PORT, () => {
+    logger.info({ port: PORT, env: process.env.NODE_ENV }, 'PushSaaS API server started');
+  });
+}
+
+// Arrancar el servidor
+startServer().catch((error) => {
+  logger.error({ err: error }, 'Failed to start server');
+  process.exit(1);
 });

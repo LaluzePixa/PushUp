@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { campaignsService, CampaignFormData } from '@/services/api';
+import { campaignsService, segmentsService, CampaignFormData } from '@/services/api';
 import { useSiteContext } from '@/contexts/SiteContext';
+import type { Segment } from '@/types/api';
 
 interface CreateCampaignModalProps {
   isOpen: boolean;
@@ -20,12 +21,15 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
     clickUrl: '',
     badgeUrl: '',
     siteId: selectedSite?.id || undefined,
+    segmentId: undefined,
     sendType: 'immediate',
     scheduledAt: ''
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const [loadingSegments, setLoadingSegments] = useState(false);
 
   // Actualizar siteId cuando cambie el sitio seleccionado
   useEffect(() => {
@@ -36,6 +40,32 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
       }));
     }
   }, [selectedSite, isOpen]);
+
+  // Cargar segmentos cuando se abre el modal
+  useEffect(() => {
+    const loadSegments = async () => {
+      if (!isOpen) return;
+
+      setLoadingSegments(true);
+      try {
+        const response = await segmentsService.getAll({
+          page: 1,
+          limit: 100,
+          siteId: selectedSite?.id
+        });
+
+        if (response.success && response.data) {
+          setSegments(response.data.segments || []);
+        }
+      } catch (error) {
+        console.error('Error loading segments:', error);
+      } finally {
+        setLoadingSegments(false);
+      }
+    };
+
+    loadSegments();
+  }, [isOpen, selectedSite]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +98,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
         clickUrl: formData.clickUrl?.trim() || undefined,
         badgeUrl: formData.badgeUrl?.trim() || undefined,
         siteId: formData.siteId,
+        segmentId: formData.segmentId || undefined,
         sendType: formData.sendType,
         scheduledAt: formData.sendType === 'scheduled' ? formData.scheduledAt : undefined
       };
@@ -129,6 +160,7 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
       clickUrl: '',
       badgeUrl: '',
       siteId: selectedSite?.id, // Mantener el sitio seleccionado
+      segmentId: undefined,
       sendType: 'immediate',
       scheduledAt: ''
     });
@@ -202,6 +234,38 @@ export default function CreateCampaignModal({ isOpen, onClose, onSuccess }: Crea
                 </p>
               </div>
             )}
+
+            {/* Selector de Segmento */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Segmento de Audiencia (Opcional)
+              </label>
+              <select
+                value={formData.segmentId || ''}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  segmentId: e.target.value ? parseInt(e.target.value) : undefined
+                }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                disabled={loadingSegments}
+              >
+                <option value="">Todos los suscriptores</option>
+                {loadingSegments ? (
+                  <option disabled>Cargando segmentos...</option>
+                ) : segments.length === 0 ? (
+                  <option disabled>No hay segmentos disponibles</option>
+                ) : (
+                  segments.map(segment => (
+                    <option key={segment.id} value={segment.id}>
+                      {segment.name} {segment.description && `- ${segment.description}`}
+                    </option>
+                  ))
+                )}
+              </select>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Selecciona un segmento para enviar la campaña solo a un grupo específico de usuarios
+              </p>
+            </div>
           </div>
 
           <div>

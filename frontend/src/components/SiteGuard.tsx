@@ -15,7 +15,7 @@ export const SiteGuard: React.FC<SiteGuardProps> = ({ children }) => {
     const router = useRouter();
 
     // Rutas que no requieren selección de sitio
-    const noSiteRequiredPaths = ['/setup/sites'];
+    const noSiteRequiredPaths = ['/sites'];
     const shouldBypassSiteGuard = noSiteRequiredPaths.some(path => pathname === path);
 
     console.log('🔍 SiteGuard render:', {
@@ -26,11 +26,11 @@ export const SiteGuard: React.FC<SiteGuardProps> = ({ children }) => {
         shouldBypassSiteGuard
     });
 
-    // Efecto para redirigir a /setup/sites si no hay sitios y no estamos ya allí
+    // Efecto para redirigir a /sites si no hay sitios y no estamos ya allí
     useEffect(() => {
         if (!loading && sites.length === 0 && !shouldBypassSiteGuard) {
-            console.log('➕ No hay sitios, redirigiendo a /setup/sites para crear el primero');
-            router.replace('/setup/sites');
+            console.log('➕ No hay sitios, redirigiendo a /sites para crear el primero');
+            router.replace('/sites');
         }
     }, [loading, sites.length, shouldBypassSiteGuard, router]);
 
@@ -60,7 +60,7 @@ export const SiteGuard: React.FC<SiteGuardProps> = ({ children }) => {
         );
     }
 
-    // Si estamos en la ruta de bypass (setup/sites), permitir acceso
+    // Si estamos en la ruta de bypass (/sites), permitir acceso
     if (shouldBypassSiteGuard) {
         console.log('🚪 Ruta de bypass, mostrando contenido sin verificar sitio');
         return <>{children}</>;

@@ -61,6 +61,19 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='site_id') THEN
     ALTER TABLE subscriptions ADD COLUMN site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE;
   END IF;
+  
+  -- Agregar columnas de geolocalización
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='country') THEN
+    ALTER TABLE subscriptions ADD COLUMN country VARCHAR(100);
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='state') THEN
+    ALTER TABLE subscriptions ADD COLUMN state VARCHAR(100);
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='city') THEN
+    ALTER TABLE subscriptions ADD COLUMN city VARCHAR(100);
+  END IF;
 END $$;
 
 -- Índices para la tabla subscriptions
@@ -76,6 +89,19 @@ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='site_id') THEN
     CREATE INDEX IF NOT EXISTS idx_subscriptions_site_id ON subscriptions (site_id);
   END IF;
+  
+  -- Índices de geolocalización
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='country') THEN
+    CREATE INDEX IF NOT EXISTS idx_subscriptions_country ON subscriptions (country) WHERE country IS NOT NULL;
+  END IF;
+  
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='state') THEN
+    CREATE INDEX IF NOT EXISTS idx_subscriptions_state ON subscriptions (state) WHERE state IS NOT NULL;
+  END IF;
+  
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='city') THEN
+    CREATE INDEX IF NOT EXISTS idx_subscriptions_city ON subscriptions (city) WHERE city IS NOT NULL;
+  END IF;
 END $$;
 
 -- Tabla de segmentos de audiencia (debe crearse primero)
@@ -86,6 +112,9 @@ CREATE TABLE IF NOT EXISTS audience_segments (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   conditions JSONB NOT NULL DEFAULT '{}',
+  max_size INTEGER DEFAULT 10000 CHECK (max_size > 0 AND max_size <= 100000),
+  materialized_count INTEGER DEFAULT 0 CHECK (materialized_count >= 0),
+  last_materialized_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -102,5 +102,18 @@ export const dashboardService = {
         enabled: number;
     }>> {
         return apiClient.get('/dashboard/monitoring-locations');
+    },
+
+    /**
+     * Get geographic data for subscribers
+     */
+    async getGeoReport(siteId?: number): Promise<ApiResponse<{
+        countries: Array<{ name: string; count: number }>;
+        states: Array<{ name: string; count: number }>;
+        cities: Array<{ name: string; count: number }>;
+        activeUsers: number;
+    }>> {
+        const params = siteId ? `?siteId=${siteId}` : '';
+        return apiClient.get(`/dashboard/geo-report${params}`);
     }
 };

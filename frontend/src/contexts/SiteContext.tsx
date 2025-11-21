@@ -78,12 +78,23 @@ export const SiteProvider = ({ children }: SiteProviderProps) => {
       }
     } catch (error) {
       console.error('Error loading sites:', error);
-      // Si hay un error 401, probablemente el token expiró
-      if (error instanceof Error && error.message.includes('expirado')) {
-        console.warn('⚠️ Token expirado, cerrando sesión...');
-        // Cerrar sesión completa (limpia tanto cookie como token)
-        await fetch('/api/auth/logout', { method: 'POST' });
-        window.location.href = '/login';
+      // Si hay un error 401 o de token, cerrar sesión y redirigir
+      if (error instanceof Error &&
+        (error.message.includes('Token de acceso requerido') ||
+          error.message.includes('expirado') ||
+          error.message.includes('401'))) {
+        console.warn('⚠️ Sesión inválida, cerrando sesión...');
+        // Limpiar localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('selectedSiteId');
+          localStorage.clear();
+        }
+        // Llamar al endpoint de logout para limpiar la cookie del servidor
+        fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
+          // Forzar recarga completa para limpiar todo el estado
+          window.location.href = '/login';
+        });
+        return; // Salir temprano para evitar continuar la ejecución
       }
     } finally {
       setLoading(false);

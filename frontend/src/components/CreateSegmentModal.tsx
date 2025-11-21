@@ -9,18 +9,39 @@ interface CreateSegmentModalProps {
   onSuccess: () => void;
 }
 
+type ConditionType =
+  // Site Behavior
+  | 'weeksSinceLastVisit'
+  // Subscription
+  | 'dateOfSubscription'
+  | 'daysSinceSubscription'
+  | 'createdAt'
+  // Location
+  | 'city'
+  | 'state'
+  | 'country'
+  // Device Info
+  | 'deviceType'
+  | 'browser'
+  | 'browserLanguage'
+  | 'operatingSystem'
+  | 'userAgent'
+  // Site
+  | 'siteId';
+
 export default function CreateSegmentModal({ isOpen, onClose, onSuccess }: CreateSegmentModalProps) {
   const { selectedSite, sites } = useSiteContext();
   const [formData, setFormData] = useState<SegmentFormData>({
     name: '',
     description: '',
     siteId: undefined,
-    conditions: {}
+    conditions: {},
+    maxSize: 10000
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [conditionType, setConditionType] = useState<'userAgent' | 'createdAt' | 'siteId'>('userAgent');
+  const [conditionType, setConditionType] = useState<ConditionType>('country');
 
   // Inicializar el siteId con el sitio seleccionado
   useEffect(() => {
@@ -61,47 +82,45 @@ export default function CreateSegmentModal({ isOpen, onClose, onSuccess }: Creat
       name: '',
       description: '',
       siteId: selectedSite?.id, // Mantener el sitio seleccionado
-      conditions: {}
+      conditions: {},
+      maxSize: 10000
     });
-    setConditionType('userAgent');
+    setConditionType('country');
     setError(null);
   };
 
-  const handleConditionChange = (field: string, value: string | number | undefined) => {
+  const handleConditionChange = (field: string, value: string | number | string[] | undefined) => {
     setFormData(prev => ({
       ...prev,
       conditions: {
         ...prev.conditions,
         [conditionType]: {
-          ...prev.conditions[conditionType],
+          ...(prev.conditions[conditionType] || {}),
           [field]: value
         }
       }
     }));
   };
 
-  const addCondition = () => {
+  const addCondition = (type: ConditionType) => {
+    if (!type) return;
+
     const newCondition = { ...formData.conditions };
 
-    switch (conditionType) {
-      case 'userAgent':
-        if (!newCondition.userAgent) {
-          newCondition.userAgent = {};
-        }
-        break;
-      case 'createdAt':
-        if (!newCondition.createdAt) {
-          newCondition.createdAt = {};
-        }
-        break;
-      case 'siteId':
-        if (!newCondition.siteId) {
-          newCondition.siteId = {};
-        }
-        break;
+    // Inicializar la condición si no existe
+    if (!newCondition[type]) {
+      newCondition[type] = {};
     }
 
     setFormData(prev => ({ ...prev, conditions: newCondition }));
+  };
+
+  const handleConditionTypeChange = (newType: ConditionType) => {
+    // Si la condición ya no existe, agregarla automáticamente
+    if (!formData.conditions[newType]) {
+      addCondition(newType);
+    }
+    setConditionType(newType);
   };
 
   const removeCondition = (type: keyof SegmentFormData['conditions']) => {
@@ -181,6 +200,27 @@ export default function CreateSegmentModal({ isOpen, onClose, onSuccess }: Creat
                 </p>
               )}
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Tamaño Máximo del Segmento
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="100000"
+                value={formData.maxSize || 10000}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  maxSize: parseInt(e.target.value) || 10000
+                }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                placeholder="10000"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Límite de suscriptores en este segmento (1-100,000). Default: 10,000
+              </p>
+            </div>
           </div>
 
           {/* Condiciones */}
@@ -197,16 +237,32 @@ export default function CreateSegmentModal({ isOpen, onClose, onSuccess }: Creat
               <div className="flex space-x-2">
                 <select
                   value={conditionType}
-                  onChange={(e) => setConditionType(e.target.value as 'userAgent' | 'createdAt' | 'siteId')}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                  onChange={(e) => handleConditionTypeChange(e.target.value as ConditionType)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
                 >
-                  <option value="userAgent">User Agent</option>
-                  <option value="createdAt">Fecha de Registro</option>
-                  <option value="siteId">Sitio Específico</option>
+                  <option value="" disabled>Select a condition</option>
+                  <optgroup label="Site Behavior">
+                    <option value="weeksSinceLastVisit">Weeks Since Last Visit</option>
+                  </optgroup>
+                  <optgroup label="Subscription">
+                    <option value="dateOfSubscription">Date of Subscription</option>
+                    <option value="daysSinceSubscription">Days Since Subscription</option>
+                  </optgroup>
+                  <optgroup label="Location">
+                    <option value="city">City</option>
+                    <option value="state">Region/State</option>
+                    <option value="country">Country</option>
+                  </optgroup>
+                  <optgroup label="Device Info">
+                    <option value="deviceType">Device Type (Mobile/Desktop)</option>
+                    <option value="browser">Browser</option>
+                    <option value="browserLanguage">Browser Language</option>
+                    <option value="operatingSystem">Operating System</option>
+                  </optgroup>
                 </select>
                 <button
                   type="button"
-                  onClick={addCondition}
+                  onClick={() => addCondition(conditionType)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   Agregar
@@ -317,6 +373,150 @@ export default function CreateSegmentModal({ isOpen, onClose, onSuccess }: Creat
                         </option>
                       ))}
                     </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Country Conditions */}
+              {formData.conditions.country && (
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium text-gray-900 dark:text-white">🌍 Condiciones de País</h5>
+                    <button
+                      type="button"
+                      onClick={() => removeCondition('country')}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Igual a</label>
+                      <input
+                        type="text"
+                        value={formData.conditions.country?.equals || ''}
+                        onChange={(e) => handleConditionChange('equals', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                        placeholder="Ej: United States, Mexico"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Diferente a</label>
+                      <input
+                        type="text"
+                        value={formData.conditions.country?.notEquals || ''}
+                        onChange={(e) => handleConditionChange('notEquals', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                        placeholder="Ej: Spain"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Incluir países (separados por coma)</label>
+                    <input
+                      type="text"
+                      value={formData.conditions.country?.in?.join(', ') || ''}
+                      onChange={(e) => handleConditionChange('in', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                      placeholder="Ej: United States, Canada, Mexico"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* State Conditions */}
+              {formData.conditions.state && (
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-green-50 dark:bg-green-900/20">
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium text-gray-900 dark:text-white">🗺️ Condiciones de Estado/Región</h5>
+                    <button
+                      type="button"
+                      onClick={() => removeCondition('state')}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Igual a</label>
+                      <input
+                        type="text"
+                        value={formData.conditions.state?.equals || ''}
+                        onChange={(e) => handleConditionChange('equals', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                        placeholder="Ej: California, Texas"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Diferente a</label>
+                      <input
+                        type="text"
+                        value={formData.conditions.state?.notEquals || ''}
+                        onChange={(e) => handleConditionChange('notEquals', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                        placeholder="Ej: Alaska"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Incluir estados (separados por coma)</label>
+                    <input
+                      type="text"
+                      value={formData.conditions.state?.in?.join(', ') || ''}
+                      onChange={(e) => handleConditionChange('in', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                      placeholder="Ej: California, New York, Texas"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* City Conditions */}
+              {formData.conditions.city && (
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-purple-50 dark:bg-purple-900/20">
+                  <div className="flex justify-between items-center mb-3">
+                    <h5 className="font-medium text-gray-900 dark:text-white">📍 Condiciones de Ciudad</h5>
+                    <button
+                      type="button"
+                      onClick={() => removeCondition('city')}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Igual a</label>
+                      <input
+                        type="text"
+                        value={formData.conditions.city?.equals || ''}
+                        onChange={(e) => handleConditionChange('equals', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                        placeholder="Ej: Los Angeles, New York"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Diferente a</label>
+                      <input
+                        type="text"
+                        value={formData.conditions.city?.notEquals || ''}
+                        onChange={(e) => handleConditionChange('notEquals', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                        placeholder="Ej: Miami"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Incluir ciudades (separadas por coma)</label>
+                    <input
+                      type="text"
+                      value={formData.conditions.city?.in?.join(', ') || ''}
+                      onChange={(e) => handleConditionChange('in', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm dark:bg-[#1a1a1a] dark:border-gray-600 dark:text-white"
+                      placeholder="Ej: San Francisco, Seattle, Portland"
+                    />
                   </div>
                 </div>
               )}

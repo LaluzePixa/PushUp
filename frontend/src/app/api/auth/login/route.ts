@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
                     createdAt: data.user.createdAt,
                     updatedAt: data.user.updatedAt,
                 },
+                token: data.token, // Store JWT token in session
                 expiresAt,
             })
 

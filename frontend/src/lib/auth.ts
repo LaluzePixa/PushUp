@@ -12,6 +12,7 @@ export interface Session {
         createdAt: string
         updatedAt?: string
     }
+    token?: string // JWT token for API authentication
     expiresAt: Date
 }
 

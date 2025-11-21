@@ -1,21 +1,21 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import InfoCard from "@/components/InfoCard"
+import apiClient from '@/services/api-client'
+import { useSiteContext } from '@/contexts/SiteContext'
 
 // Toggle component - moved outside render
 const Toggle = ({ checked, onChange, disabled = false }: { checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean }) => (
     <button
         onClick={() => !disabled && onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            checked ? 'bg-blue-600' : 'bg-gray-200'
-        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${checked ? 'bg-blue-600' : 'bg-gray-200'
+            } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         disabled={disabled}
     >
         <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                checked ? 'translate-x-6' : 'translate-x-1'
-            }`}
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'
+                }`}
         />
     </button>
 )
@@ -42,6 +42,9 @@ const ColorPicker = ({ value, onChange }: { value: string; onChange: (value: str
 // PreviewPanel component - moved outside render
 const PreviewPanel = ({
     text,
+    backgroundColor,
+    textColor,
+    inputColor,
     collectEmail,
     emailLabel,
     collectPhone,
@@ -50,6 +53,9 @@ const PreviewPanel = ({
     submitButton
 }: {
     text: string;
+    backgroundColor: string;
+    textColor: string;
+    inputColor: string;
     collectEmail: boolean;
     emailLabel: string;
     collectPhone: boolean;
@@ -59,17 +65,18 @@ const PreviewPanel = ({
 }) => (
     <div className="bg-gray-200 p-6 rounded-lg">
         <h3 className="text-sm font-medium text-gray-700 mb-4">Preview:</h3>
-        <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm">
-            <h4 className="text-lg font-medium text-gray-900 mb-4">{text}</h4>
+        <div className="p-6 rounded-lg shadow-lg max-w-sm" style={{ backgroundColor }}>
+            <h4 className="text-lg font-medium mb-4" style={{ color: textColor }}>{text}</h4>
 
             {collectEmail && (
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{ color: textColor }}>
                         {emailLabel}
                     </label>
                     <input
                         type="email"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{ color: inputColor, backgroundColor: '#ffffff' }}
                         placeholder=""
                     />
                 </div>
@@ -77,7 +84,7 @@ const PreviewPanel = ({
 
             {collectPhone && (
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    <label className="block text-sm font-medium mb-2" style={{ color: textColor }}>
                         {phoneLabel}
                     </label>
                     <div className="flex">
@@ -87,6 +94,7 @@ const PreviewPanel = ({
                         <input
                             type="tel"
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            style={{ color: inputColor, backgroundColor: '#ffffff' }}
                             placeholder=""
                         />
                     </div>
@@ -106,9 +114,14 @@ const PreviewPanel = ({
 )
 
 export default function Page() {
+    const { selectedSite } = useSiteContext()
+    const [loading, setLoading] = useState(true)
+
     const [isEnabled, setIsEnabled] = useState(false)
     const [animation, setAnimation] = useState("Slide-in")
     const [backgroundColor, setBackgroundColor] = useState("#ffffff")
+    const [textColor, setTextColor] = useState("#000000")
+    const [inputColor, setInputColor] = useState("#000000")
     const [text, setText] = useState("Opt-in for latest news and updates")
     const [cancelButton, setCancelButton] = useState("Not Yet")
     const [submitButton, setSubmitButton] = useState("Subscribe")
@@ -128,22 +141,153 @@ export default function Page() {
     const [defaultCountry, setDefaultCountry] = useState("United States")
     const [phoneRequired, setPhoneRequired] = useState(true)
 
-    const handleSave = () => {
-        console.log("Saving email prompt settings...")
+    // Cargar configuración existente
+    useEffect(() => {
+        const loadSettings = async () => {
+            if (!selectedSite) {
+                setLoading(false)
+                return
+            }
+
+            setLoading(true)
+            try {
+                const response = await apiClient.get<{
+                    success: boolean
+                    data: {
+                        settings: {
+                            is_enabled: boolean
+                            animation: string
+                            background_color: string
+                            text_color: string
+                            input_color: string
+                            text: string
+                            cancel_button_text: string
+                            submit_button_text: string
+                            re_prompt_delay: number
+                            thank_you_message: string
+                            collect_email: boolean
+                            email_label: string
+                            email_validation_error: string
+                            email_required: boolean
+                            collect_phone: boolean
+                            phone_label: string
+                            phone_validation_error: string
+                            default_country: string
+                            phone_required: boolean
+                        }
+                    }
+                }>(`/email-prompt/settings/${selectedSite.id}`)
+
+                if (response?.success && response.data?.settings) {
+                    const s = response.data.settings
+                    setIsEnabled(s.is_enabled)
+                    setAnimation(s.animation)
+                    setBackgroundColor(s.background_color)
+                    setTextColor(s.text_color || '#000000')
+                    setInputColor(s.input_color || '#000000')
+                    setText(s.text)
+                    setCancelButton(s.cancel_button_text)
+                    setSubmitButton(s.submit_button_text)
+                    setRePromptDelay(s.re_prompt_delay.toString())
+                    setThankYouMessage(s.thank_you_message)
+                    setCollectEmail(s.collect_email)
+                    setEmailLabel(s.email_label)
+                    setEmailValidationError(s.email_validation_error)
+                    setEmailRequired(s.email_required)
+                    setCollectPhone(s.collect_phone)
+                    setPhoneLabel(s.phone_label)
+                    setPhoneValidationError(s.phone_validation_error)
+                    setDefaultCountry(s.default_country)
+                    setPhoneRequired(s.phone_required)
+                }
+            } catch (error) {
+                console.error('Error loading email prompt settings:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        loadSettings()
+    }, [selectedSite])
+
+    const handleSave = async () => {
+        if (!selectedSite) {
+            alert('Por favor selecciona un sitio')
+            return
+        }
+
+        try {
+            const payload = {
+                is_enabled: isEnabled,
+                animation,
+                background_color: backgroundColor,
+                text_color: textColor,
+                input_color: inputColor,
+                text,
+                icon_url: null,
+                cancel_button_text: cancelButton,
+                cancel_button_color: '#2563eb',
+                cancel_button_show: true,
+                submit_button_text: submitButton,
+                submit_button_color: '#2563eb',
+                submit_button_show: true,
+                re_prompt_delay: parseInt(rePromptDelay),
+                thank_you_message: thankYouMessage,
+                collect_email: collectEmail,
+                email_label: emailLabel,
+                email_validation_error: emailValidationError,
+                email_required: emailRequired,
+                collect_phone: collectPhone,
+                phone_label: phoneLabel,
+                phone_validation_error: phoneValidationError,
+                default_country: defaultCountry,
+                phone_required: phoneRequired
+            }
+
+            const response = await apiClient.post(
+                `/email-prompt/settings/${selectedSite.id}`,
+                payload
+            )
+
+            if (response?.success) {
+                alert('Configuración guardada exitosamente')
+            } else {
+                alert('Error al guardar configuración')
+            }
+        } catch (error) {
+            console.error('Error saving email prompt settings:', error)
+            alert('Error al guardar configuración')
+        }
+    }
+
+    if (loading) {
+        return (
+            <div className="max-w-6xl mx-auto p-6">
+                <div className="text-center py-12">Loading...</div>
+            </div>
+        )
+    }
+
+    if (!selectedSite) {
+        return (
+            <div className="max-w-6xl mx-auto p-6">
+                <div className="text-center py-12">Por favor selecciona un sitio</div>
+            </div>
+        )
     }
 
     return (
         <div className="max-w-6xl mx-auto p-6">
             <div className="mb-6">
-                <InfoCard 
-                    title="Email Prompt" 
-                    description="If enabled, the prompt to collect email & phone will be shown immediately after a user completes the action on the push notification prompt." 
+                <InfoCard
+                    title="Email Prompt"
+                    description="If enabled, the prompt to collect email & phone will be shown immediately after a user completes the action on the push notification prompt."
                 />
             </div>
-            
+
             <div className="bg-white dark:bg-[#222] rounded-lg border border-border p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6 dark:text-white">Setup Email Prompt</h2>
-                
+
                 {/* Enable Toggle */}
                 <div className="flex items-center gap-3 mb-6">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Enable:</label>
@@ -184,6 +328,22 @@ export default function Page() {
                                     Background Color:
                                 </label>
                                 <ColorPicker value={backgroundColor} onChange={setBackgroundColor} />
+                            </div>
+
+                            {/* Text Color */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                                    Text Color:
+                                </label>
+                                <ColorPicker value={textColor} onChange={setTextColor} />
+                            </div>
+
+                            {/* Input Color */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                                    Input Text Color:
+                                </label>
+                                <ColorPicker value={inputColor} onChange={setInputColor} />
                             </div>
 
                             {/* Text */}
@@ -379,6 +539,9 @@ export default function Page() {
                         <div>
                             <PreviewPanel
                                 text={text}
+                                backgroundColor={backgroundColor}
+                                textColor={textColor}
+                                inputColor={inputColor}
                                 collectEmail={collectEmail}
                                 emailLabel={emailLabel}
                                 collectPhone={collectPhone}
@@ -395,9 +558,9 @@ export default function Page() {
                     <div className="text-sm text-blue-600 mb-4">
                         <strong>Note:</strong> Any change here will go into effect immediately UNLESS you have previously dismissed the email prompt. If you do not see the change on your browser, please clear your browsing history and try again.
                     </div>
-                    
+
                     <div className="flex justify-end">
-                        <button 
+                        <button
                             onClick={handleSave}
                             className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
                         >

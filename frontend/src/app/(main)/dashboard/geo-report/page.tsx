@@ -1,13 +1,17 @@
+'use client'
+
 import React from 'react';
-import { MetricsGrid } from '@/components/MetricsGrid';
+import { GeoCard } from '@/components/GeoCard';
 
 const geo_Reports = () => {
   return (
-    <div>
-      <MetricsGrid
-        metrics={['impressions', 'interactions', 'impressions', 'interactions', 'impressions', 'interactions']}
-        className="mb-8"
-      />
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <GeoCard type="countries" />
+        <GeoCard type="active_users" />
+        <GeoCard type="states" />
+        <GeoCard type="cities" />
+      </div>
     </div>
   );
 };

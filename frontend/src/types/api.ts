@@ -155,19 +155,48 @@ export interface MonitoringLocation {
 /**
  * Segment Types
  */
+
+// Operadores disponibles para cada tipo de condición
+export type StringOperator = 'equals' | 'notEquals' | 'contains' | 'notContains' | 'in' | 'notIn';
+export type DateOperator = 'after' | 'before' | 'between';
+export type NumericOperator = 'equals' | 'notEquals' | 'in' | 'notIn';
+
+// Condiciones individuales por tipo
+export interface UserAgentCondition {
+    equals?: string;
+    notEquals?: string;
+    contains?: string;
+    notContains?: string;
+}
+
+export interface DateCondition {
+    after?: string;
+    before?: string;
+    between?: [string, string];
+}
+
+export interface NumericCondition {
+    equals?: number;
+    notEquals?: number;
+    in?: number[];
+    notIn?: number[];
+}
+
+export interface StringCondition {
+    equals?: string;
+    notEquals?: string;
+    in?: string[];
+    notIn?: string[];
+}
+
+// Condiciones del segmento (soporte completo de geo-targeting)
 export interface SegmentConditions {
-    userAgent?: {
-        contains?: string;
-        notContains?: string;
-    };
-    createdAt?: {
-        after?: string;
-        before?: string;
-    };
-    siteId?: {
-        equals?: number;
-        in?: number[];
-    };
+    userAgent?: UserAgentCondition;
+    createdAt?: DateCondition;
+    siteId?: NumericCondition;
+    country?: StringCondition;
+    state?: StringCondition;
+    city?: StringCondition;
     [key: string]: unknown;
 }
 
@@ -177,6 +206,9 @@ export interface Subscriber {
     userAgent?: string;
     ipAddress?: string;
     siteId: number;
+    country?: string;
+    state?: string;
+    city?: string;
     createdAt: string;
     updatedAt?: string;
 }
@@ -187,6 +219,9 @@ export interface Segment {
     description?: string;
     siteId?: number;
     conditions: SegmentConditions;
+    maxSize?: number; // Límite máximo de suscriptores (1-100000)
+    materializedCount?: number; // Conteo cacheado de suscriptores
+    lastMaterializedAt?: string; // Última actualización del conteo
     createdAt: string;
     updatedAt?: string;
 }
@@ -196,6 +231,7 @@ export interface SegmentFormData {
     description?: string;
     siteId?: number;
     conditions: SegmentConditions;
+    maxSize?: number; // Default 10000, max 100000
 }
 
 /**

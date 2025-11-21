@@ -3,23 +3,33 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { useSiteContext } from '@/contexts/SiteContext';
 
 /**
- * Site Selection Page - Simple Redirect to Dashboard
+ * Site Selection Page - Smart Redirect
  *
- * Esta página simplemente redirige al dashboard.
- * El SiteGuard dentro de (main) se encargará de:
- * 1. Verificar si hay sitio en localStorage
- * 2. Mostrar el selector si no hay sitio seleccionado
- * 3. Mostrar el dashboard si hay sitio seleccionado
+ * Esta página detecta si hay sitios disponibles:
+ * - Si NO hay sitios → redirige a /sites para crear el primero
+ * - Si hay sitios → redirige al dashboard (SiteGuard manejará el selector)
  */
 export default function SelectSitePage() {
   const router = useRouter();
+  const { sites, loading } = useSiteContext();
 
   useEffect(() => {
-    console.log('� SelectSitePage - Redirigiendo a dashboard (SiteGuard manejará la lógica)');
-    router.replace('/dashboard');
-  }, [router]);
+    if (loading) {
+      console.log('⏳ SelectSitePage - Cargando sitios...');
+      return;
+    }
+
+    if (sites.length === 0) {
+      console.log('➕ SelectSitePage - No hay sitios, redirigiendo a /sites para crear uno');
+      router.replace('/sites');
+    } else {
+      console.log('📱 SelectSitePage - Hay sitios disponibles, redirigiendo a dashboard');
+      router.replace('/dashboard');
+    }
+  }, [sites, loading, router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
